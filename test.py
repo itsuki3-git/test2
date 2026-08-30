@@ -395,8 +395,6 @@ def main(page: ft.Page):
         )
         count_table2.rows = rows
 
-# 👇 ⭕【新設・差し替え】show_card_dialog とその関連処理を以下に置き換え
-
     # ダイアログを閉じる関数
     def close_dialog(e):
         page.dialog.open = False
@@ -524,7 +522,7 @@ def main(page: ft.Page):
         page.dialog.open = True
         page.update()
         refresh_dialog_ui()
-        
+
     # 3つ目の表（カードボーナス）を計算・更新する関数
     def update_data_table3():
         rows = []
@@ -532,9 +530,9 @@ def main(page: ft.Page):
 
         for name, score in card_inputs.items():
             if name == "職業":
-                text_color = ft.Colors.AMBER_300
+                text_color = ft.Colors.CYAN_800
             elif name == "小さい進歩":
-                text_color = ft.Colors.AMBER_500
+                text_color = ft.Colors.TEAL_700
             elif name == "大きい進歩":
                 text_color = ft.Colors.RED_900
 
@@ -545,7 +543,7 @@ def main(page: ft.Page):
                 return lambda e: on_card_input_change(k, e.control.value)
 
             input_field = ft.TextField(
-                value=str(score), # ⭕ 自動集計された値がここにバチッと入ります
+                value=str(score),
                 width=60,
                 height=35,
                 text_size=14,
@@ -555,11 +553,11 @@ def main(page: ft.Page):
                 on_change=make_on_change()
             )
 
-            # 3列目：押すと各ボタン個別のダイアログが出るように起動イベントを作成
+            # 3列目：ダイアログ起動イベント
             def make_dialog_click(k=name):
                 return lambda e: show_card_dialog(k)
 
-            # 3列目用の個別入力ボタン
+            # ⭐️【バグ修正】不要なcontent定義を削除し、確実にクリックが反応する構造に修正
             detail_btn = ft.ElevatedButton(
                 text="入力",
                 style=ft.ButtonStyle(
@@ -567,41 +565,31 @@ def main(page: ft.Page):
                     color=text_color,
                     shape=ft.RoundedRectangleBorder(radius=6),
                 ),
-                content=ft.Text("入力", size=14, weight="bold"),
                 on_click=make_dialog_click()
             )
 
             rows.append(
                 ft.DataRow(
                     cells=[
-                        ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)), # ⭕ 1列目：純粋な項目名
-                        ft.DataCell(input_field),                                           # ⭕ 2列目：得点の直接入力欄
-                        ft.DataCell(detail_btn),                                            # ⭕ 3列目：個別入力用のダイアログボタン
+                        ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)), 
+                        ft.DataCell(input_field),                                           
+                        ft.DataCell(detail_btn),                                            
                     ]
                 )
             )
 
-        # 3つ目の表の最下部（2列目の真下に合計を出力）
+        # 3つ目の表の最下部
         rows.append(
             ft.DataRow(
                 color=ft.Colors.GREY_100,
                 cells=[
                     ft.DataCell(ft.Text("合計点", size=18, weight="bold", color=ft.Colors.BLACK)),
-                    ft.DataCell(ft.Text(f"{sub_total} 点", size=18, weight="bold", color=ft.Colors.RED_700 if sub_total < 0 else ft.Colors.GREEN_700)), # 2列目の真下
-                    ft.DataCell(ft.Text("", size=16)), # 3列目は空欄
+                    ft.DataCell(ft.Text(f"{sub_total} 点", size=18, weight="bold", color=ft.Colors.RED_700 if sub_total < 0 else ft.Colors.GREEN_700)), 
+                    ft.DataCell(ft.Text("", size=16)), 
                 ]
             )
         )
         count_table3.rows = rows
-
-        count_table3.rows = rows
-
-    # ボタンをポチッと押したときの増減ロジック
-    def on_card_adjust_click(key, value):
-        card_inputs[key] += value
-        update_data_table3()
-        table_container3.update()
-
 
     def on_input_change(key, val):
         try:
