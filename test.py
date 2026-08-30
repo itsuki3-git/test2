@@ -464,8 +464,8 @@ def main(page: ft.Page):
             ft.DataColumn(ft.Text("農畜産物", size=16, weight="bold")),
             ft.DataColumn(ft.Text("個数/頭数", size=16, weight="bold")),
             ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
-        ],
-        rows=[]
+        ]
+        # ⚠️ rows=[] は関数側で自動生成して代入するため、ここからは削除します
     )
     table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
 
