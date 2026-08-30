@@ -408,6 +408,7 @@ def main(page: ft.Page):
         palette_row.update()
         table_container.update()
         table_container2.update()
+        table_container3.update() 
         stack_layout.update()
 
     def on_palette_click(e):
@@ -482,6 +483,21 @@ def main(page: ft.Page):
     )
     table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
 
+    count_table3 = ft.DataTable(
+        width=350,
+        column_spacing=18,
+        columns=[
+            ft.DataColumn(ft.Text("追加項目", size=16, weight="bold")), # 項目名は後から自由に変更できます
+            ft.DataColumn(ft.Text("現在の数", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
+        ],
+        rows=[
+            # 起動確認用のテスト行（後で自動計算に書き換えます）
+            ft.DataRow(cells=[ft.DataCell(ft.Text("サンプル", size=16)), ft.DataCell(ft.Text("0")), ft.DataCell(ft.Text("0点"))])
+        ]
+    )
+    table_container3 = ft.Container(content=count_table3, alignment=ft.alignment.center, padding=10)
+
     stack_layout = ft.Stack(width=TOTAL_W, height=TOTAL_H)
 
     for r in range(ROWS):
@@ -535,7 +551,9 @@ def main(page: ft.Page):
             ft.Divider(),
             table_container,
             ft.Divider(),
-            table_container2
+            table_container2,
+            ft.Divider(),    # 👈 区切り線を追加
+            table_container3 # 👈 3つ目の表をここに追加
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
     )
 
