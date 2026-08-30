@@ -390,26 +390,81 @@ def main(page: ft.Page):
 
         def refresh_dialog_ui():
             dialog_items_container.controls.clear()
+            # 保存されている個別データをループして入力行を作成
             for idx, item in enumerate(card_details[name]):
-                def make_name_change(i=idx): return lambda e: on_detail_name_change(name, i, e.control.value)
-                txt_name = ft.TextField(
-                    value=item["name"], hint_text="カード名など", width=140, height=35,
-                    text_size=14, content_padding=5, on_change=make_name_change()
-                )
+                
+                # --- 項目名（カード名）の入力コントロール定義 ---
+                if name == "大きい進歩":
+                    # 🧱 大きい進歩用のドロップダウン選択肢を定義
+                    options_list = [
+                        ft.dropdown.Option("かまど"),
+                        ft.dropdown.Option("調理場"),
+                        ft.dropdown.Option("井戸"),
+                        ft.dropdown.Option("レンガ窯"),
+                        ft.dropdown.Option("石窯"),
+                        ft.dropdown.Option("家具製作所"),
+                        ft.dropdown.Option("製陶所"),
+                        ft.dropdown.Option("カゴ製作所")
+                    ]
+                    
+                    # デフォルトの得点マッピング
+                    default_scores = {
+                        "かまど": 1, "調理場": 1, "井戸": 4, "レンガ窯": 2, 
+                        "石窯": 3, "家具製作所": 2, "製陶所": 2, "カゴ製作所": 2
+                    }
 
-                def make_score_change(i=idx): return lambda e: on_detail_score_change(name, i, e.control.value)
+                    # ドロップダウンが変更された時の処理（点数も連動して自動入力）
+                    def make_dropdown_change(i=idx):
+                        return lambda e: on_big_progress_change(i, e.control.value)
+
+                    def on_big_progress_change(index, selected_value):
+                        card_details["大きい進歩"][index]["name"] = selected_value
+                        # リストに存在するカードであればデフォルト点数を自動セット
+                        card_details["大きい進歩"][index]["score"] = default_scores.get(selected_value, 0)
+                        # メイン画面とダイアログの表示を両方リフレッシュ
+                        recalculate_card_score("大きい進歩")
+                        refresh_dialog_ui()
+
+                    input_name_widget = ft.Dropdown(
+                        value=item["name"] if item["name"] else None,
+                        hint_text="選択してください",
+                        options=options_list,
+                        width=140,
+                        height=35,
+                        text_size=13,
+                        content_padding=5,
+                        on_change=make_dropdown_change()
+                    )
+                else:
+                    # 💼 職業・🌿 小さい進歩は、今まで通りの自由入力テキストフィールド
+                    def make_name_change(i=idx): 
+                        return lambda e: on_detail_name_change(name, i, e.control.value)
+                    
+                    input_name_widget = ft.TextField(
+                        value=item["name"], hint_text="カード名など", width=140, height=35,
+                        text_size=14, content_padding=5, on_change=make_name_change()
+                    )
+
+                # 得点の入力欄（共通）
+                def make_score_change(i=idx): 
+                    return lambda e: on_detail_score_change(name, i, e.control.value)
+                
                 txt_score = ft.TextField(
                     value=str(item["score"]), hint_text="点数", width=60, height=35,
                     text_size=14, content_padding=5, text_align=ft.TextAlign.CENTER,
                     keyboard_type=ft.KeyboardType.NUMBER, on_change=make_score_change()
                 )
 
-                def make_delete_click(i=idx): return lambda e: remove_detail_item(name, i, refresh_dialog_ui)
+                # 削除ボタン（共通）
+                def make_delete_click(i=idx): 
+                    return lambda e: remove_detail_item(name, i, refresh_dialog_ui)
+                
                 btn_delete = ft.IconButton(
                     icon=ft.Icons.DELETE, icon_color=ft.Colors.RED_400, width=30, height=30, on_click=make_delete_click()
                 )
 
-                item_row = ft.Row(controls=[txt_name, txt_score, btn_delete], spacing=5, alignment=ft.MainAxisAlignment.CENTER)
+                # ⭕ input_name_widget を使って行を組み立てます
+                item_row = ft.Row(controls=[input_name_widget, txt_score, btn_delete], spacing=5, alignment=ft.MainAxisAlignment.CENTER)
                 dialog_items_container.controls.append(item_row)
             dialog_items_container.update()
 
