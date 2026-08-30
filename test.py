@@ -42,7 +42,7 @@ def main(page: ft.Page):
     cell_dict = {}
 
     # 2つ目の表の入力数値を管理する辞書（初期値はすべて0）
-    agri_inputs = {"小麦": 0, "野菜": 0, "羊": 0, "猪": 0, "牛": 0}
+    agri_inputs = {"小麦": 0, "野菜": 0, "羊": 0, "猪": 0, "牛": 0, "家族の数": 2}
 
     # --- 牧場（閉空間）と未使用パネル、および柵に囲まれた厩を数えるアルゴリズム ---
     def analyze_grid():
@@ -173,6 +173,8 @@ def main(page: ft.Page):
                 elif 2 <= count <= 3: score = 2
                 elif 4 <= count <= 5: score = 3
                 elif count >= 6: score = 4
+            elif name == "家族の数":
+                score = count * 3
             sub_total += score
         return sub_total
 
@@ -309,6 +311,8 @@ def main(page: ft.Page):
                 text_color = ft.Colors.BLACK           # ⭕ 黒
             elif name == "牛":
                 text_color = ft.Colors.BROWN_900       # ⭕ 濃い茶色
+            elif name == "家族の数":
+                text_color = ft.Colors.BLUE_700
          
             if name == "小麦":
                 if count==0: score = -1
@@ -340,6 +344,8 @@ def main(page: ft.Page):
                 elif 2 <= count <= 3: score = 2
                 elif 4 <= count <= 5: score = 3
                 elif count >= 6: score = 4
+            elif name == "家族の数":
+               score  count*3
 
             sub_total += score
 
