@@ -112,29 +112,6 @@ def main(page: ft.Page):
 
         return enclosed_count
 
-
-    def update_mode_ui():
-        if current_mode == "COLOR":
-            mode_text.value = "現在のモード: 🎨 色塗り中"
-            mode_text.color = ft.Colors.BLUE_700
-            line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.GREY_300, color=ft.Colors.BLACK,
-                                                 shape=ft.RoundedRectangleBorder(radius=8))
-        else:
-            mode_text.value = "現在のモード: ✏️ 線を選択中"
-            mode_text.color = ft.Colors.BLACK
-            line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE,
-                                                 shape=ft.RoundedRectangleBorder(radius=8))
-            for c in palette_row.controls:
-                c.border = None
-
-        spaces = count_enclosed_spaces()
-        space_count_text.value = f"📦 黒線で囲まれた空間の数: {spaces} つ"
-
-        line_mode_btn.update()
-        mode_text.update()
-        palette_row.update()
-        space_count_text.update()
-
     def on_palette_click(e):
         nonlocal selected_color, current_mode
         current_mode = "COLOR"
@@ -153,6 +130,30 @@ def main(page: ft.Page):
         if current_mode == "COLOR":
             e.control.bgcolor = selected_color
             e.control.update()
+            
+    def update_mode_ui():
+        if current_mode == "COLOR":
+            mode_text.value = "現在のモード: 🎨 色塗り中"
+            mode_text.color = ft.Colors.BLUE_700
+            line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.GREY_300, color=ft.Colors.BLACK,
+                                                 shape=ft.RoundedRectangleBorder(radius=8))
+        else:
+            mode_text.value = "現在のモード: ✏️ 線を選択中"
+            mode_text.color = ft.Colors.BLACK
+            line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE,
+                                                 shape=ft.RoundedRectangleBorder(radius=8))
+            for c in palette_row.controls:
+                c.border = None
+
+        spaces = count_enclosed_spaces()
+        space_count_text.value = f"📦 黒線で囲まれた空間の数: {spaces} つ"
+
+        # --- 【重要】更新処理の最適化と漏れの修正 ---
+        line_mode_btn.update()
+        mode_text.update()
+        palette_row.update()
+        space_count_text.update()
+        stack_layout.update()  # 👈 これを追加！線やマスが配置されている大元を更新します
 
     def toggle_line(e):
         if current_mode == "LINE":
@@ -160,10 +161,10 @@ def main(page: ft.Page):
                 e.control.bgcolor = ft.Colors.GREY_300
             else:
                 e.control.bgcolor = ft.Colors.BLACK
-            # ここでの e.control.update() は削除
+            
+            # e.control.update() は不要なまま、全体処理へ流します
             update_mode_ui()
-
-
+    
     palette_options = [
         ft.Container(width=40, height=40, bgcolor=col, border_radius=20, data=col, on_click=on_palette_click) for col in
         PALETTE_COLORS]
