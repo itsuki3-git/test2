@@ -34,6 +34,7 @@ def main(page: ft.Page):
         {"name": "厩", "color": ft.Colors.LIGHT_BLUE_300},
     ]
     
+    # 【バグ修正】リストの最初の要素から初期色を正しく取得
     selected_color = PALETTE_INFO[0]["color"]
 
     horiz_line_dict = {}
@@ -109,7 +110,6 @@ def main(page: ft.Page):
                     while inner_queue:
                         curr_r, curr_c = inner_queue.pop(0)
 
-                        # 牧場内のマスが水色（厩）であればフラグを立てる
                         if cell_dict[(curr_r, curr_c)].bgcolor == ft.Colors.LIGHT_BLUE_300:
                             has_stable = True
 
@@ -168,7 +168,7 @@ def main(page: ft.Page):
                     ]
                 )
             )
-
+        
         # 3. 各資源マスの追加（0個は除外）
         for info in PALETTE_INFO:
             name = info["name"]
@@ -211,7 +211,7 @@ def main(page: ft.Page):
                                                  shape=ft.RoundedRectangleBorder(radius=8))
             # 各Columnの中のContainer(ボタン本体)の枠線をクリアする
             for p_col in palette_row.controls:
-                p_col.controls.border = None
+                p_col.controls[0].border = None
 
         ranch_c, unused_c, ranch_stable = analyze_grid()
         update_data_table(ranch_c, unused_c, ranch_stable)
@@ -227,7 +227,7 @@ def main(page: ft.Page):
         selected_color = e.control.data
         # すべてのボタンContainerの選択ボーダーを確実にリセット
         for p_col in palette_row.controls:
-            p_col.controls.border = None
+            p_col.controls[0].border = None
         # タップされたボタンContainerに枠線を適用
         e.control.border = ft.border.all(3, ft.Colors.BLACK)
         update_mode_ui()
