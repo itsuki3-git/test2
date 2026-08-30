@@ -21,78 +21,97 @@ def main(page: ft.Page):
 
     horiz_line_dict = {}
     vert_line_dict = {}
-
+    
     # --- 完全に囲まれた空間だけを数えるアルゴリズム ---
     def count_enclosed_spaces():
-        visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
+        # 盤面の外側（外部空間）も含めた探索用の visited 配列
+        # ROWS x COLS の外側に1マスずつ広げるため、サイズは (ROWS+2) x (COLS+2)
+        # 仮想的なインデックス: 行は -1 ~ ROWS、列は -1 ~ COLS
+        visited = { (r, c): False for r in range(-1, ROWS + 1) for c in range(-1, COLS + 1) }
 
-        # 1. まず「外周（盤面の外）」につながっている開いたグループを探索して除外する
-        border_cells = []
-        for r in range(ROWS):
-            for c in range(COLS):
-                if r == 0 or r == ROWS - 1 or c == 0 or c == COLS - 1:
-                    border_cells.append((r, c))
+        # 1. 盤面の外側（境界線の外）すべてを「外部空間（海）」としてキューの初期値にする
+        queue = []
+        for r in range(-1, ROWS + 1):
+            for c in range(-1, COLS + 1):
+                if r == -1 or r == ROWS or c == -1 or c == COLS:
+                    visited[(r, c)] = True
+                    queue.append((r, c))
 
-        for r, c in border_cells:
-            if not visited[r][c]:
-                is_leaking = False
+        # 2. 外部空間から「黒線（壁）」に阻まれないエリアをすべて探索して visited にする（外から漏れる場所）
+        while queue:
+            curr_r, curr_c = queue.pop(0)
 
-                if r == 0 and horiz_line_dict[(0, c)].bgcolor != ft.Colors.BLACK: is_leaking = True
-                if r == ROWS - 1 and horiz_line_dict[(ROWS, c)].bgcolor != ft.Colors.BLACK: is_leaking = True
-                if c == 0 and vert_line_dict[(0, r)].bgcolor != ft.Colors.BLACK: is_leaking = True
-                if c == COLS - 1 and vert_line_dict[(COLS, r)].bgcolor != ft.Colors.BLACK: is_leaking = True
+            # 上への移動 (curr_r-1, curr_c)
+            if curr_r > -1: # 移動先が外周の内側
+                # curr_rマスの上の境界（horiz_line）が黒くなければ移動可能
+                if 0 <= curr_r < ROWS + 1 and 0 <= curr_c < COLS:
+                    if horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BLACK:
+                        if not visited[(curr_r - 1, curr_c)]:
+                            visited[(curr_r - 1, curr_c)] = True
+                            queue.append((curr_r - 1, curr_c))
 
-                if is_leaking:
-                    queue = [(r, c)]
-                    visited[r][c] = True
-                    while queue:
-                        curr_r, curr_c = queue.pop(0)
+            # 下への移動 (curr_r+1, curr_c)
+            if curr_r < ROWS:
+                # (curr_r+1)マスの上の境界（horiz_line）が黒くなければ移動可能
+                if 0 <= curr_r + 1 < ROWS + 1 and 0 <= curr_c < COLS:
+                    if horiz_line_dict[(curr_r + 1, curr_c)].bgcolor != ft.Colors.BLACK:
+                        if not visited[(curr_r + 1, curr_c)]:
+                            visited[(curr_r + 1, curr_c)] = True
+                            queue.append((curr_r + 1, curr_c))
 
-                        if curr_r > 0 and not visited[curr_r - 1][curr_c]:
-                            if horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BLACK:
-                                visited[curr_r - 1][curr_c] = True
-                                queue.append((curr_r - 1, curr_c))
-                        if curr_r < ROWS - 1 and not visited[curr_r + 1][curr_c]:
-                            if horiz_line_dict[(curr_r + 1, curr_c)].bgcolor != ft.Colors.BLACK:
-                                visited[curr_r + 1][curr_c] = True
-                                queue.append((curr_r + 1, curr_c))
-                        if curr_c > 0 and not visited[curr_r][curr_c - 1]:
-                            if vert_line_dict[(curr_c, curr_r)].bgcolor != ft.Colors.BLACK:
-                                visited[curr_r][curr_c - 1] = True
-                                queue.append((curr_r, curr_c - 1))
-                        if curr_c < COLS - 1 and not visited[curr_r][curr_c + 1]:
-                            if vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BLACK:
-                                visited[curr_r][curr_c + 1] = True
-                                queue.append((curr_r, curr_c + 1))
+            # 左への移動 (curr_r, curr_c-1)
+            if curr_c > -1:
+                # curr_cマスの左の境界（vert_line）が黒くなければ移動可能
+                if 0 <= curr_c < COLS + 1 and 0 <= curr_r < ROWS:
+                    if vert_line_dict[(curr_c, curr_r)].bgcolor != ft.Colors.BLACK:
+                        if not visited[(curr_r, curr_c - 1)]:
+                            visited[(curr_r, curr_c - 1)] = True
+                            queue.append((curr_r, curr_c - 1))
 
-        # 2. 外に漏れていない、残りの「完全に閉じ込められた内側の空間」だけをカウントする
+            # 右への移動 (curr_r, curr_c+1)
+            if curr_c < COLS:
+                # (curr_c+1)マスの左の境界（vert_line）が黒くなければ移動可能
+                if 0 <= curr_c + 1 < COLS + 1 and 0 <= curr_r < ROWS:
+                    if vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BLACK:
+                        if not visited[(curr_r, curr_c + 1)]:
+                            visited[(curr_r, curr_c + 1)] = True
+                            queue.append((curr_r, curr_c + 1))
+
+        # 3. 外から到達できなかった「完全に閉じ込められた内側の空間（島）」の独立したグループ数をカウントする
         enclosed_count = 0
         for r in range(ROWS):
             for c in range(COLS):
-                if not visited[r][c]:
+                if not visited[(r, c)]:
                     enclosed_count += 1
-                    queue = [(r, c)]
-                    visited[r][c] = True
-                    while queue:
-                        curr_r, curr_c = queue.pop(0)
-                        if curr_r > 0 and not visited[curr_r - 1][curr_c]:
-                            if horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BLACK:
-                                visited[curr_r - 1][curr_c] = True
-                                queue.append((curr_r - 1, curr_c))
-                        if curr_r < ROWS - 1 and not visited[curr_r + 1][curr_c]:
-                            if horiz_line_dict[(curr_r + 1, curr_c)].bgcolor != ft.Colors.BLACK:
-                                visited[curr_r + 1][curr_c] = True
-                                queue.append((curr_r + 1, curr_c))
-                        if curr_c > 0 and not visited[curr_r][curr_c - 1]:
-                            if vert_line_dict[(curr_c, curr_r)].bgcolor != ft.Colors.BLACK:
-                                visited[curr_r][curr_c - 1] = True
-                                queue.append((curr_r, curr_c - 1))
-                        if curr_c < COLS - 1 and not visited[curr_r][curr_c + 1]:
-                            if vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BLACK:
-                                visited[curr_r][curr_c + 1] = True
-                                queue.append((curr_r, curr_c + 1))
+                    # 新しい閉鎖空間を発見したので、その空間をすべて埋める
+                    inner_queue = [(r, c)]
+                    visited[(r, c)] = True
+                    while inner_queue:
+                        curr_r, curr_c = inner_queue.pop(0)
+
+                        # 上
+                        if curr_r > 0 and horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BLACK:
+                            if not visited[(curr_r - 1, curr_c)]:
+                                visited[(curr_r - 1, curr_c)] = True
+                                inner_queue.append((curr_r - 1, curr_c))
+                        # 下
+                        if curr_r < ROWS - 1 and horiz_line_dict[(curr_r + 1, curr_c)].bgcolor != ft.Colors.BLACK:
+                            if not visited[(curr_r + 1, curr_c)]:
+                                visited[(curr_r + 1, curr_c)] = True
+                                inner_queue.append((curr_r + 1, curr_c))
+                        # 左
+                        if curr_c > 0 and vert_line_dict[(curr_c, curr_r)].bgcolor != ft.Colors.BLACK:
+                            if not visited[(curr_r, curr_c - 1)]:
+                                visited[(curr_r, curr_c - 1)] = True
+                                inner_queue.append((curr_r, curr_c - 1))
+                        # 右
+                        if curr_c < COLS - 1 and vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BLACK:
+                            if not visited[(curr_r, curr_c + 1)]:
+                                visited[(curr_r, curr_c + 1)] = True
+                                inner_queue.append((curr_r, curr_c + 1))
 
         return enclosed_count
+
 
     def update_mode_ui():
         if current_mode == "COLOR":
