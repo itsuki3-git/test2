@@ -2,7 +2,7 @@ import flet as ft
 
 
 def main(page: ft.Page):
-    page.title = "牧場・資源管理グリッド"
+    page.title = "牧場・資源管理システム"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
@@ -22,11 +22,11 @@ def main(page: ft.Page):
 
     current_mode = "COLOR"
     
-    # パレット情報を定義
+    # パレット情報を定義（名称指定通りに変更）
     PALETTE_INFO = [
-        {"name": "木", "color": ft.Colors.GREEN_400},
-        {"name": "レンガ", "color": ft.Colors.BROWN_400},
-        {"name": "石", "color": ft.Colors.GREY_900},
+        {"name": "木の家", "color": ft.Colors.GREEN_400},
+        {"name": "レンガの家", "color": ft.Colors.BROWN_400},
+        {"name": "石の家", "color": ft.Colors.GREY_900},
         {"name": "畑", "color": ft.Colors.AMBER_500},
     ]
     
@@ -36,7 +36,7 @@ def main(page: ft.Page):
     vert_line_dict = {}
     cell_dict = {}
 
-    # --- 牧場（閉空間）と柵外の未着色パネルを数えるアルゴリズム ---
+    # --- 牧場（閉空間）と未使用（柵外の未着色パネル）を数えるアルゴリズム ---
     def analyze_grid():
         visited = { (r, c): False for r in range(-1, ROWS + 1) for c in range(-1, COLS + 1) }
 
@@ -84,12 +84,12 @@ def main(page: ft.Page):
                             visited[(curr_r, curr_c + 1)] = True
                             queue.append((curr_r, curr_c + 1))
 
-        # 探索が終わった時点で、visitedがTrue＝柵の外側にあるマスのうち、未着色の数をカウント
-        unenclosed_uncolored_count = 0
+        # 柵の外側にあるマスのうち、未着色（未使用）の数をカウント
+        unused_count = 0
         for r in range(ROWS):
             for c in range(COLS):
                 if visited[(r, c)] and cell_dict[(r, c)].bgcolor == ft.Colors.GREY_100:
-                    unenclosed_uncolored_count += 1
+                    unused_count += 1
 
         # 2. 内側に孤立した完全な閉鎖空間（牧場）をカウント
         enclosed_count = 0
@@ -119,11 +119,11 @@ def main(page: ft.Page):
                                 visited[(curr_r, curr_c + 1)] = True
                                 inner_queue.append((curr_r, curr_c + 1))
 
-        return enclosed_count, unenclosed_uncolored_count
+        return enclosed_count, unused_count
 
-    # 集計情報を表形式（DataTable）で更新する関数
-    def update_data_table(unenclosed_uncolored_count):
-        counts = {"木": 0, "レンガ": 0, "石": 0, "畑": 0}
+    # 集計情報を表形式（DataTable）で大文字・幅広に更新する関数
+    def update_data_table(ranch_count, unused_count):
+        counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
         
         # すべてのマスの現在の色を集計
         for cell in cell_dict.values():
@@ -134,25 +134,36 @@ def main(page: ft.Page):
         # 表示用の行（DataRow）リストを作成
         rows = []
         
-        # 各資源マスの追加（0個は除外）
+        # 各資源マスの追加（0個は除外、フォントサイズ16、太字）
         for name, count in counts.items():
             if count > 0:
                 rows.append(
                     ft.DataRow(
                         cells=[
-                            ft.DataCell(ft.Text(f"🔸 {name}", weight="bold")),
-                            ft.DataCell(ft.Text(f"{count} 個")),
+                            ft.DataCell(ft.Text(f"🔸 {name}", size=16, weight="bold")),
+                            ft.DataCell(ft.Text(f"{count} 個", size=16, weight="bold")),
                         ]
                     )
                 )
         
-        # 柵外の未着色パネルの追加（0個は除外）
-        if unenclosed_uncolored_count > 0:
+        # 「牧場」の数を追加（0個は除外）
+        if ranch_count > 0:
             rows.append(
                 ft.DataRow(
                     cells=[
-                        ft.DataCell(ft.Text("🌾 柵外の未着色", color=ft.Colors.BLUE_GREY_600, weight="bold")),
-                        ft.DataCell(ft.Text(f"{unenclosed_uncolored_count} 個", color=ft.Colors.BLUE_GREY_600)),
+                        ft.DataCell(ft.Text("📦 牧場", color=ft.Colors.GREEN_700, size=16, weight="bold")),
+                        ft.DataCell(ft.Text(f"{ranch_count} つ", color=ft.Colors.GREEN_700, size=16, weight="bold")),
+                    ]
+                )
+            )
+
+        # 「未使用」マスの追加（0個は除外）
+        if unused_count > 0:
+            rows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text("🌾 未使用", color=ft.Colors.BLUE_GREY_600, size=16, weight="bold")),
+                        ft.DataCell(ft.Text(f"{unused_count} 個", color=ft.Colors.BLUE_GREY_600, size=16, weight="bold")),
                     ]
                 )
             )
@@ -174,17 +185,15 @@ def main(page: ft.Page):
             for p_col in palette_row.controls:
                 p_col.controls[0].border = None
 
-        # アルゴリズムから2つのカウントを取得
-        spaces, unenclosed_uncolored = analyze_grid()
-        space_count_text.value = f"📦 茶線で囲まれた牧場の数: {spaces} つ"
+        # アルゴリズムから各カウントを取得
+        ranch_cnt, unused_cnt = analyze_grid()
         
-        # 表形式のデータを更新
-        update_data_table(unenclosed_uncolored)
+        # 表形式の大きなデータを更新
+        update_data_table(ranch_cnt, unused_cnt)
 
         line_mode_btn.update()
         mode_text.update()
         palette_row.update()
-        space_count_text.update()
         table_container.update()
         stack_layout.update()
 
@@ -219,14 +228,15 @@ def main(page: ft.Page):
                 actual_line.bgcolor = ft.Colors.BROWN_700
             update_mode_ui()
 
-    # パレットボタンの上に文字を表示するレイアウト
+    # パレットボタンの上に文字を表示するレイアウト（ご指定の名前を上部に表示）
     palette_options = []
     for info in PALETTE_INFO:
         btn = ft.Container(width=40, height=40, bgcolor=info["color"], border_radius=20, data=info["color"], on_click=on_palette_click)
         lbl = ft.Text(info["name"], size=10, weight="bold")
-        palette_options.append(ft.Column([btn, lbl], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2))
+        palette_options.append(ft.Column([lbl, btn], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2))
 
-    palette_options[0].controls[0].border = ft.border.all(3, ft.Colors.BLACK)
+    # 初期選択（木の家）の外枠を黒にする
+    palette_options[0].controls[1].border = ft.border.all(3, ft.Colors.BLACK)
 
     palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER, spacing=15)
 
@@ -240,18 +250,18 @@ def main(page: ft.Page):
     top_control_row = ft.Row(controls=[palette_row, ft.VerticalDivider(width=20), line_mode_btn],
                              alignment=ft.MainAxisAlignment.CENTER)
     mode_text = ft.Text("現在のモード: 🎨 色塗り中", size=16, weight="bold", color=ft.Colors.BLUE_700)
-    space_count_text = ft.Text("📦 茶線で囲まれた牧場の数: 0 つ", size=18, weight="bold", color=ft.Colors.GREEN_700)
     
-    # 新しく綺麗な表形式（DataTable）を作成
+    # 【変更】大きく表示される幅広の表形式（DataTable）を作成
     count_table = ft.DataTable(
+        width=280,
         columns=[
-            ft.DataColumn(ft.Text("項目", weight="bold")),
-            ft.DataColumn(ft.Text("配置数", weight="bold")),
+            ft.DataColumn(ft.Text("管理項目", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("現在の数", size=16, weight="bold")),
         ],
         rows=[]
     )
-    # スクロール可能にするコンテナ
-    table_container = ft.Container(content=count_table, alignment=ft.alignment.center)
+    # 表サイズをしっかり大きく配置するコンテナ
+    table_container = ft.Container(content=count_table, alignment=ft.alignment.center, padding=10)
 
     stack_layout = ft.Stack(width=TOTAL_W, height=TOTAL_H)
 
@@ -321,8 +331,6 @@ def main(page: ft.Page):
             mode_text,
             ft.Divider(),
             ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300)),
-            ft.Divider(),
-            space_count_text,
             ft.Divider(),
             table_container  # 表形式のコンテナを画面下部に配置
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
