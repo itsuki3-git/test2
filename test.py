@@ -209,8 +209,8 @@ def main(page: ft.Page):
         elif field_count >= 5: field_score = 4
         
         # 牧場点数
-        if ranch_count == 0: ranch_score = -1
-        elif ranch_count <= 4: ranch_score = ranch_count * 1
+        if ranch_c == 0: ranch_score = -1     # ⭕ 変数名を ranch_c に修正
+        elif ranch_c <= 4: ranch_score = ranch_c * 1
         else: ranch_score = 4
         
         # 厩点数
