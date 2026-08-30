@@ -386,7 +386,7 @@ def main(page: ft.Page):
             line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE,
                                                  shape=ft.RoundedRectangleBorder(radius=8))
             for p_col in palette_row.controls:
-                p_col.controls.border = None
+                p_col.controls[0].border = None
 
         ranch_c, unused_c, ranch_stable = analyze_grid()
         update_data_table(ranch_c, unused_c, ranch_stable)
@@ -402,7 +402,7 @@ def main(page: ft.Page):
         current_mode = "COLOR"
         selected_color = e.control.data
         for p_col in palette_row.controls:
-            p_col.controls.border = None
+            p_col.controls[0].border = None
         e.control.border = ft.border.all(3, ft.Colors.BLACK)
         update_mode_ui()
 
@@ -434,7 +434,7 @@ def main(page: ft.Page):
         lbl = ft.Text(info["name"], size=10, weight="bold")
         palette_options.append(ft.Column([btn, lbl], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2))
 
-    palette_options.controls.border = ft.border.all(3, ft.Colors.BLACK)
+    palette_options[0].border = ft.border.all(3, ft.Colors.BLACK)
     palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER, spacing=10)
 
     line_mode_btn = ft.ElevatedButton(
