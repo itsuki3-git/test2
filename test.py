@@ -148,7 +148,34 @@ def main(page: ft.Page):
         rows = []
         total_score = 0  # 合計得点の初期化
         
-        # 1. 牧場カウント（1空間あたり 1点）
+        # ーーー 1. 【変更】畑を最優先で一番上に追加（0個は除外） ーーー
+        for info in PALETTE_INFO:
+            name = info["name"]
+            if name != "畑":  # 畑だけをここで先に処理します
+                continue
+            count = counts[name]
+            text_color = info["color"]
+            if text_color == ft.Colors.AMBER_500: text_color = ft.Colors.AMBER_700
+
+            if count > 0:
+                if count == 1: score = -1
+                elif count == 2: score = 1
+                elif count == 3: score = 2
+                elif count == 4: score = 3
+                elif count >= 5: score = 4
+
+                total_score += score
+                rows.append(
+                    ft.DataRow(
+                        cells=[
+                            ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)),
+                            ft.DataCell(ft.Text(f"{count} 個", size=16, weight="bold", color=text_color)),
+                            ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=text_color)),
+                        ]
+                    )
+                )
+
+        # ーーー 2. 牧場カウント（1空間あたり 1点） ーーー
         if ranch_count > 0:
             score = ranch_count * 1
             total_score += score
@@ -162,14 +189,12 @@ def main(page: ft.Page):
                 )
             )
             
-        # 2. 厩の得点計算（最大4つまで、1つあたり1点）
-        # 牧場内にある厩の数を、最大4に制限して計算します
+        # ーーー 3. 厩の得点計算（最大4つまで、1つあたり1点） ーーー
         limited_ranch_stable_count = min(ranch_stable_count, 4)
         if ranch_stable_count > 0:
             score = limited_ranch_stable_count * 1
             total_score += score
             
-            # 表に表示するテキスト（4つを超えている場合は上限であることを明示）
             display_count = f"{ranch_stable_count} つ"
             if ranch_stable_count > 4:
                 display_count = f"{ranch_stable_count} つ (上限4)"
@@ -184,36 +209,21 @@ def main(page: ft.Page):
                 )
             )
         
-        # 3. 各資源マスの追加（0個は除外 / アイテムごとの特殊得点ルール）
+        # ーーー 4. 他の家（木の家、レンガの家、石の家）の追加（0個は除外） ーーー
         for info in PALETTE_INFO:
             name = info["name"]
-            if name not in counts:
+            if name not in counts or name == "畑":  # 畑はすでに追加したのでスキップ
                 continue
             count = counts[name]
             text_color = info["color"]
             if text_color == ft.Colors.GREEN_400: text_color = ft.Colors.GREEN_700
             if text_color == ft.Colors.DEEP_ORANGE_700: text_color = ft.Colors.DEEP_ORANGE_700
-            if text_color == ft.Colors.AMBER_500: text_color = ft.Colors.AMBER_700
 
             if count > 0:
                 score = 0
-                if name == "木の家":
-                    score = count * 0
-                elif name == "レンガの家":
-                    score = count * 1
-                elif name == "石の家":
-                    score = count * 2
-                elif name == "畑":
-                    if count == 1:
-                        score = -1
-                    elif count == 2:
-                        score = 1
-                    elif count == 3:
-                        score = 2
-                    elif count == 4:
-                        score = 3
-                    elif count >= 5:
-                        score = 4
+                if name == "木の家": score = count * 0
+                elif name == "レンガの家": score = count * 1
+                elif name == "石の家": score = count * 2
 
                 total_score += score
                 rows.append(
@@ -226,7 +236,7 @@ def main(page: ft.Page):
                     )
                 )
         
-        # 4. 未使用マスの追加（1マスあたり -1点）
+        # ーーー 5. 未使用マスの追加（1マスあたり -1点） ーーー
         if unused_count > 0:
             score = unused_count * -1
             total_score += score
@@ -240,13 +250,13 @@ def main(page: ft.Page):
                 )
             )
 
-        # 5. 最下部に合計得点行を追加（常に表示）
+        # ーーー 6. 最下部に合計得点行を追加 ーーー
         rows.append(
             ft.DataRow(
-                color=ft.Colors.GREY_100,  # 合計行を目立たせるために薄いグレーの背景
+                color=ft.Colors.GREY_100,
                 cells=[
                     ft.DataCell(ft.Text("合計点", size=18, weight="bold", color=ft.Colors.BLACK)),
-                    ft.DataCell(ft.Text("", size=16)),  # 中央は空欄
+                    ft.DataCell(ft.Text("", size=16)),
                     ft.DataCell(ft.Text(f"{total_score} 点", size=18, weight="bold", color=ft.Colors.RED_700 if total_score < 0 else ft.Colors.GREEN_700)),
                 ]
             )
