@@ -91,6 +91,7 @@ def main(page: ft.Page):
                             visited[(curr_r, curr_c - 1)] = True
                             queue.append((curr_r, curr_c - 1))
 
+            # ⭕【バグ修正】「r」になっていた部分をすべて「curr_r」に正しく修正しました
             # 右への移動
             if curr_c < COLS:
                 if 0 <= curr_c + 1 < COLS + 1 and 0 <= curr_r < ROWS:
@@ -137,6 +138,7 @@ def main(page: ft.Page):
                             if not visited[(curr_r, curr_c - 1)]:
                                 visited[(curr_r, curr_c - 1)] = True
                                 inner_queue.append((curr_r, curr_c - 1))
+                        # ⭕【バグ修正】ここも「r」から「curr_r」に修正しました
                         if curr_c < COLS - 1 and vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BROWN_700:
                             if not visited[(curr_r, curr_c + 1)]:
                                 visited[(curr_r, curr_c + 1)] = True
@@ -256,6 +258,20 @@ def main(page: ft.Page):
                 ft.DataCell(ft.Text("畑", size=16, weight="bold", color=field_color)),
                 ft.DataCell(ft.Text(f"{field_count} 個", size=16, weight="bold", color=field_color)),
                 ft.DataCell(ft.Text(f"{field_score} 点", size=16, weight="bold", color=field_color)),
+            ])
+        )
+
+        ranch_color = ft.Colors.BROWN_700
+        if ranch_count == 0: ranch_score = -1
+        elif ranch_count <= 4: ranch_score = ranch_count * 1
+        else: ranch_score = 4
+
+        total_score += ranch_score
+        rows.append(
+            ft.DataRow(cells=[
+                ft.DataCell(ft.Text("牧場", size=16, weight="bold", color=ranch_color)),
+                ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ranch_color)),
+                ft.DataCell(ft.Text(f"{ranch_score} 点", size=16, weight="bold", color=ranch_color)),
             ])
         )
 
