@@ -438,9 +438,14 @@ def main(page: ft.Page):
                     def make_name_change(i=idx): 
                         return lambda e: on_detail_name_change(name, i, e.control.value)
                     
-                    input_name_widget = ft.TextField(
-                        value=item["name"], hint_text="カード名など", width=140, height=35,
-                        text_size=14, content_padding=5, on_change=make_name_change()
+                    input_name_widget = ft.Dropdown(
+                        value=item["name"] if item["name"] else None,
+                        hint_text="選択してください",
+                        options=options_list,
+                        width=140,  # ⭕ 横幅はそのまま維持
+                        text_size=13,
+                        content_padding=5,
+                        on_change=make_dropdown_change() # ⭕ 余計な height を削除してFletに自動計算させます
                     )
 
                 # 得点の入力欄（共通）
