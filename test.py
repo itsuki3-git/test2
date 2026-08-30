@@ -693,9 +693,11 @@ def main(page: ft.Page):
     # カレンダーで日付が選択されたときに呼び出される関数
     def on_date_picked(e):
         if e.control.value:
-            # 選択された日付を「YYYY/MM/DD」の形式にしてTextFieldにセット
             top_date_field.value = e.control.value.strftime("%Y/%m/%d")
             top_date_field.update()
+            
+            # ⭐️ 選択完了後、カレンダー画面を確実に閉じます
+            page.close(date_picker) # ⭕ これを追記
 
     # ⭐️ カレンダー画面本体を定義（デフォルトは今日）
     date_picker = ft.DatePicker(
