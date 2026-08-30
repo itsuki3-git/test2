@@ -144,27 +144,32 @@ def main(page: ft.Page):
         for name, count in agri_inputs.items():
             score = -1
             if name == "小麦":
-                if 1 <= count <= 3: score = 1
+                if count==0: score = -1
+                elif 1 <= count <= 3: score = 1
                 elif 4 <= count <= 5: score = 2
                 elif 6 <= count <= 7: score = 3
                 elif count >= 8: score = 4
             elif name == "野菜":
-                if count == 1: score = 1
-                elif count == 2: score = 2
-                elif count == 3: score = 3
+                if count==0: score = -1
+                elif count==1: score = 1
+                elif count==2: score = 2
+                elif count==3: score = 3  
                 elif count >= 4: score = 4
             elif name == "羊":
-                if 1 <= count <= 3: score = 1
+                if count==0: score = -1
+                elif 1 <= count <= 3: score = 1
                 elif 4 <= count <= 5: score = 2
                 elif 6 <= count <= 7: score = 3
                 elif count >= 8: score = 4
             elif name == "猪":
-                if 1 <= count <= 2: score = 1
+                if count==0: score = -1
+                elif 1 <= count <= 2: score = 1
                 elif 3 <= count <= 4: score = 2
                 elif 5 <= count <= 6: score = 3
                 elif count >= 7: score = 4
             elif name == "牛":
-                if count == 1: score = 1
+                if count==0: score = -1
+                elif count == 1: score = 1
                 elif 2 <= count <= 3: score = 2
                 elif 4 <= count <= 5: score = 3
                 elif count >= 6: score = 4
@@ -292,11 +297,6 @@ def main(page: ft.Page):
         for name, count in agri_inputs.items():
             score = -1
             text_color = ft.Colors.BLACK
-            # 👇 【修正後】update_data_table2内の色判定部分を以下に置き換え
-
-        for name, count in agri_inputs.items():
-            score = -1
-            text_color = ft.Colors.BLACK
 
             # ーーー 🌾 各農畜産物のカラーをご指定通りに変更 ーーー
             if name == "小麦":
@@ -311,23 +311,32 @@ def main(page: ft.Page):
                 text_color = ft.Colors.BROWN_900       # ⭕ 濃い茶色
          
             if name == "小麦":
-                if 1 <= count <= 3: score = 1
+                if count==0: score = -1
+                elif 1 <= count <= 3: score = 1
                 elif 4 <= count <= 5: score = 2
                 elif 6 <= count <= 7: score = 3
                 elif count >= 8: score = 4
-
+            elif name == "野菜":
+                if count==0: score = -1
+                elif count==1: score = 1
+                elif count==2: score = 2
+                elif count==3: score = 3  
+                elif count >= 4: score = 4
             elif name == "羊":
-                if 1 <= count <= 3: score = 1
+                if count==0: score = -1
+                elif 1 <= count <= 3: score = 1
                 elif 4 <= count <= 5: score = 2
                 elif 6 <= count <= 7: score = 3
                 elif count >= 8: score = 4
             elif name == "猪":
-                if 1 <= count <= 2: score = 1
+                if count==0: score = -1
+                elif 1 <= count <= 2: score = 1
                 elif 3 <= count <= 4: score = 2
                 elif 5 <= count <= 6: score = 3
                 elif count >= 7: score = 4
             elif name == "牛":
-                if count == 1: score = 1
+                if count==0: score = -1
+                elif count == 1: score = 1
                 elif 2 <= count <= 3: score = 2
                 elif 4 <= count <= 5: score = 3
                 elif count >= 6: score = 4
