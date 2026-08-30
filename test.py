@@ -290,6 +290,7 @@ def main(page: ft.Page):
         line_mode_btn.update()
         palette_row.update()
         table_container.update()
+        table_container2.update() 
         stack_layout.update()
 
     def on_palette_click(e):
