@@ -28,7 +28,7 @@ def main(page: ft.Page):
     # パレット情報を定義
     PALETTE_INFO = [
         {"name": "木の家", "color": ft.Colors.GREEN_400},
-        {"name": "レンガの家", "color": ft.Colors.BROWN_400},
+        {"name": "レンガの家", "color": ft.Colors.DEEP_ORANGE_700},
         {"name": "石の家", "color": ft.Colors.GREY_900},
         {"name": "畑", "color": ft.Colors.AMBER_500},
         {"name": "厩", "color": ft.Colors.LIGHT_BLUE_300},
