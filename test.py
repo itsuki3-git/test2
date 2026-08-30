@@ -1,4 +1,5 @@
 import flet as ft
+import datetime
 
 
 def main(page: ft.Page):
@@ -34,7 +35,7 @@ def main(page: ft.Page):
         {"name": "厩", "color": ft.Colors.LIGHT_BLUE_300},
     ]
     
-    # 初期選択色を正しく取得
+    # ⭕【バグ修正】リストの最初の要素（木の家）から初期色を正しく取得
     selected_color = PALETTE_INFO[0]["color"]
 
     horiz_line_dict = {}
@@ -46,8 +47,6 @@ def main(page: ft.Page):
 
     # 3つ目の表（カードボーナス）の入力数値を管理する辞書
     card_inputs = {"職業": 0, "小さい進歩": 0, "大きい進歩": 0}
-
-    # 3つ目の表の個別入力データを保持する構造（項目名、点数）
     card_details = {
         "職業": [],
         "小さい進歩": [],
@@ -72,7 +71,7 @@ def main(page: ft.Page):
             if curr_r > -1:
                 if 0 <= curr_r < ROWS + 1 and 0 <= curr_c < COLS:
                     if horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BROWN_700:
-                        if not visited[(curr_r - 1, curr_c)]:
+                        if not visited[(curr_r - -1, curr_c)]:
                             visited[(curr_r - 1, curr_c)] = True
                             queue.append((curr_r - 1, curr_c))
 
@@ -188,10 +187,8 @@ def main(page: ft.Page):
             sub_total += score
         return sub_total
 
-    # 👇 【新設】get_agri_subtotal関数のすぐ下あたりに追記
     # 1〜3すべての表の点数を合算して「総得点」を計算して返す関数
     def get_grand_total():
-        # 1つ目の表（盤面）の得点計算を再現
         counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
         for cell in cell_dict.values():
             for info in PALETTE_INFO:
@@ -200,7 +197,6 @@ def main(page: ft.Page):
         
         ranch_c, unused_c, ranch_stable = analyze_grid()
         
-        # 畑点数
         field_count = counts["畑"]
         if field_count == 0 or field_count == 1: field_score = -1
         elif field_count == 2: field_score = 1
@@ -208,25 +204,19 @@ def main(page: ft.Page):
         elif field_count == 4: field_score = 3
         elif field_count >= 5: field_score = 4
         
-        # 牧場点数
-        if ranch_c == 0: ranch_score = -1     # ⭕ 変数名を ranch_c に修正
+        if ranch_c == 0: ranch_score = -1
         elif ranch_c <= 4: ranch_score = ranch_c * 1
         else: ranch_score = 4
         
-        # 厩点数
         stable_score = min(ranch_stable, 4) * 1 if ranch_stable > 0 else 0
         
-        # 家点数
         house_score = 0
         if counts["レンガの家"] > 0: house_score += counts["レンガの家"] * 1
         if counts["石の家"] > 0: house_score += counts["石の家"] * 2
         
-        # 未使用マス
         unused_score = unused_c * -1 if unused_c > 0 else 0
-        
         table1_total = field_score + ranch_score + stable_score + house_score + unused_score
         
-        # 2つ目の表の小計 ＋ 3つ目の表の小計
         table2_total = get_agri_subtotal()
         table3_total = sum(card_inputs.values())
         
@@ -236,30 +226,25 @@ def main(page: ft.Page):
     def refresh_grand_total_labels():
         gt = get_grand_total()
         color = ft.Colors.RED_700 if gt < 0 else ft.Colors.GREEN_700
-        
         top_grand_total_text.value = f"総得点: {gt} 点"
         top_grand_total_text.color = color
         bottom_grand_total_text.value = f"総得点: {gt} 点"
         bottom_grand_total_text.color = color
 
-
     # 集計情報を表形式（DataTable）で更新する関数
     def update_data_table(ranch_count, unused_count, ranch_stable_count):
         counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
-
         for cell in cell_dict.values():
             for info in PALETTE_INFO:
                 if info["name"] in counts and cell.bgcolor == info["color"]:
                     counts[info["name"]] += 1
 
         rows = []
-        total_score = 0  # 総合点の計算
-
-        # 1. 畑
+        total_score = 0
+        
         field_count = counts["畑"]
         field_color = ft.Colors.AMBER_700
-        if field_count == 0: field_score = -1
-        elif field_count == 1: field_score = -1
+        if field_count == 0 or field_count == 1: field_score = -1
         elif field_count == 2: field_score = 1
         elif field_count == 3: field_score = 2
         elif field_count == 4: field_score = 3
@@ -274,7 +259,6 @@ def main(page: ft.Page):
             ])
         )
 
-        # 2. 牧場
         ranch_color = ft.Colors.BROWN_700
         if ranch_count == 0: ranch_score = -1
         elif ranch_count <= 4: ranch_score = ranch_count * 1
@@ -286,6 +270,9 @@ def main(page: ft.Page):
                 ft.DataCell(ft.Text("牧場", size=16, weight="bold", color=ranch_color)),
                 ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ranch_color)),
                 ft.DataCell(ft.Text(f"{ranch_score} 点", size=16, weight="bold", color=ranch_color)),
+            ])
+        )
+
             ])
         )
 
@@ -304,7 +291,7 @@ def main(page: ft.Page):
                     ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
                 ])
             )
-
+        
         # 4. 家の追加
         for info in PALETTE_INFO:
             name = info["name"]
@@ -435,117 +422,81 @@ def main(page: ft.Page):
         )
         count_table2.rows = rows
 
-    # ⭕【修正】ダイアログを閉じる正しい現行仕様の関数
+    # ダイアログを閉じる関数
     def close_dialog(e):
-        page.close(page.dialog)  # 👈 page.dialog.open = False から変更
+        page.close(page.dialog)
 
     # 各項目に応じた専用ダイアログを表示する関数
     def show_card_dialog(name):
         dialog_items_container = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, height=200)
 
-        # ダイアログ内の表示を最新のデータに基づいてリフレッシュする内包関数
         def refresh_dialog_ui():
             dialog_items_container.controls.clear()
-            
-            # 保存されている個別データをループして入力行を作成
             for idx, item in enumerate(card_details[name]):
-                
-                # --- 項目名（カード名）の入力コントロール定義 ---
                 if name == "大きい進歩":
                     options_list = [
-                        ft.dropdown.Option("かまど"),
-                        ft.dropdown.Option("調理場"),
-                        ft.dropdown.Option("井戸"),
-                        ft.dropdown.Option("レンガ窯"),
-                        ft.dropdown.Option("石窯"),
-                        ft.dropdown.Option("家具製作所"),
-                        ft.dropdown.Option("製陶所"),
-                        ft.dropdown.Option("カゴ製作所")
+                        ft.dropdown.Option("かまど"), ft.dropdown.Option("調理場"),
+                        ft.dropdown.Option("井戸"), ft.dropdown.Option("レンガ窯"),
+                        ft.dropdown.Option("石窯"), ft.dropdown.Option("家具製作所"),
+                        ft.dropdown.Option("製陶所"), ft.dropdown.Option("カゴ製作所")
                     ]
-                    
                     default_scores = {
                         "かまど": 1, "調理場": 1, "井戸": 4, "レンガ窯": 2, 
                         "石窯": 3, "家具製作所": 2, "製陶所": 2, "カゴ製作所": 2
                     }
-
-                    # ドロップダウン変更時の処理
-                    def make_dropdown_change(i=idx):
-                        return lambda e: on_big_progress_change(i, e.control.value)
-
+                    def make_dropdown_change(i=idx): return lambda e: on_big_progress_change(i, e.control.value)
                     def on_big_progress_change(index, selected_value):
                         card_details["大きい進歩"][index]["name"] = selected_value
                         card_details["大きい進歩"][index]["score"] = default_scores.get(selected_value, 0)
                         recalculate_card_score("大きい進歩")
                         refresh_dialog_ui()
 
-                    # ⭕ Dropdown自体から height を削除し、Containerで囲んで高さを制御します
                     input_name_widget = ft.Container(
                         content=ft.Dropdown(
-                            value=item["name"] if item["name"] else None,
-                            hint_text="選択",
-                            options=options_list,
-                            text_size=13,
-                            content_padding=5,
-                            on_change=make_dropdown_change()
-                        ),
-                        width=140,
-                        height=35  # ⭕ コンテナ側で高さを35pxに固定
+                            value=item["name"] if item["name"] else None, hint_text="選択",
+                            options=options_list, text_size=13, content_padding=5, on_change=make_dropdown_change()
+                        ), width=140, height=35
                     )
                 else:
-                    # 職業・小さい進歩は、今まで通りの自由入力
-                    def make_name_change(i=idx): 
-                        return lambda e: on_detail_name_change(name, i, e.control.value)
-                    
+                    def make_name_change(i=idx): return lambda e: on_detail_name_change(name, i, e.control.value)
                     input_name_widget = ft.TextField(
                         value=item["name"], hint_text="カード名など", width=140, height=35,
                         text_size=14, content_padding=5, on_change=make_name_change()
                     )
 
-                # 得点の入力欄（共通）
-                def make_score_change(i=idx): 
-                    return lambda e: on_detail_score_change(name, i, e.control.value)
-                
+                def make_score_change(i=idx): return lambda e: on_detail_score_change(name, i, e.control.value)
                 txt_score = ft.TextField(
                     value=str(item["score"]), hint_text="点数", width=60, height=35,
                     text_size=14, content_padding=5, text_align=ft.TextAlign.CENTER,
                     keyboard_type=ft.KeyboardType.NUMBER, on_change=make_score_change()
                 )
 
-                # 削除ボタン（共通）
-                def make_delete_click(i=idx): 
-                    return lambda e: remove_detail_item(name, i, refresh_dialog_ui)
-                
+                def make_delete_click(i=idx): return lambda e: remove_detail_item(name, i, refresh_dialog_ui)
                 btn_delete = ft.IconButton(
                     icon=ft.Icons.DELETE, icon_color=ft.Colors.RED_400, width=30, height=30, on_click=make_delete_click()
                 )
 
                 item_row = ft.Row(controls=[input_name_widget, txt_score, btn_delete], spacing=5, alignment=ft.MainAxisAlignment.CENTER)
                 dialog_items_container.controls.append(item_row)
-            
             dialog_items_container.update()
 
-        # 【追加ボタン】が押された時の処理
         def add_detail_item(e):
             card_details[name].append({"name": "", "score": 0})
             refresh_dialog_ui()
 
-        # アイテム削除時の処理
         def remove_detail_item(category, index, callback):
             card_details[category].pop(index)
             recalculate_card_score(category)
             callback()
 
-        # 個別項目のテキストが書き換わった時の処理
         def on_detail_name_change(category, index, val):
             card_details[category][index]["name"] = val
 
-        # 個別項目の点数が書き換わった時の処理
         def on_detail_score_change(category, index, val):
             try: card_details[category][index]["score"] = int(val) if val != "" else 0
             except ValueError: card_details[category][index]["score"] = 0
             recalculate_card_score(category)
 
-        # 個別の点数を集計して2列目の得点に上書き反映する処理
         def recalculate_card_score(category):
             total = sum(item["score"] for item in card_details[category])
             card_inputs[category] = total
@@ -558,18 +509,11 @@ def main(page: ft.Page):
             top_info_container.update()
             bottom_grand_total_container.update()
 
-
-        # ダイアログの組み立て
         page.dialog = ft.AlertDialog(
             title=ft.Text(f"📋 {name}の内訳入力", weight="bold"),
             content=ft.Column(
                 controls=[
-                    ft.ElevatedButton(
-                        text="項目を追加", 
-                        icon=ft.Icons.ADD, 
-                        on_click=add_detail_item, 
-                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=6))
-                    ),
+                    ft.ElevatedButton(text="項目を追加", icon=ft.Icons.ADD, on_click=add_detail_item, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=6))),
                     ft.Divider(),
                     dialog_items_container
                 ], tight=True, width=260
@@ -577,7 +521,6 @@ def main(page: ft.Page):
             actions=[ft.TextButton("決定・閉じる", on_click=close_dialog)],
             actions_alignment=ft.MainAxisAlignment.END,
         )
-        
         page.open(page.dialog)
         refresh_dialog_ui()
 
@@ -602,13 +545,10 @@ def main(page: ft.Page):
             def make_dialog_click(k=name): return lambda e: show_card_dialog(k)
             detail_btn = ft.ElevatedButton(
                 text="入力",
-                style=ft.ButtonStyle(
-                    bgcolor=ft.Colors.GREY_200,
-                    color=text_color,
-                    shape=ft.RoundedRectangleBorder(radius=6),
-                ),
-                on_click=make_dialog_click() # ⭕ シンプルにクリックイベントだけを結びつけます
+                style=ft.ButtonStyle(bgcolor=ft.Colors.GREY_200, color=text_color, shape=ft.RoundedRectangleBorder(radius=6)),
+                on_click=make_dialog_click()
             )
+
             rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)), ft.DataCell(input_field), ft.DataCell(detail_btn)]))
 
         rows.append(
@@ -631,6 +571,9 @@ def main(page: ft.Page):
         update_data_table3()
         table_container.update()
         table_container3.update()
+        refresh_grand_total_labels()
+        top_info_container.update()
+        bottom_grand_total_container.update()
 
     def on_input_change(key, val):
         try: agri_inputs[key] = int(val) if val != "" else 0
@@ -640,6 +583,9 @@ def main(page: ft.Page):
         update_data_table2()
         table_container.update()
         table_container2.update()
+        refresh_grand_total_labels()
+        top_info_container.update()
+        bottom_grand_total_container.update()
 
     def update_mode_ui():
         if current_mode == "COLOR":
@@ -658,6 +604,9 @@ def main(page: ft.Page):
         table_container2.update()
         table_container3.update()
         stack_layout.update()
+        refresh_grand_total_labels()
+        top_info_container.update()
+        bottom_grand_total_container.update()
 
     def on_palette_click(e):
         nonlocal selected_color, current_mode
@@ -685,73 +634,45 @@ def main(page: ft.Page):
             if actual_line.bgcolor == ft.Colors.BROWN_700: actual_line.bgcolor = ft.Colors.GREY_300
             else: actual_line.bgcolor = ft.Colors.BROWN_700
             update_mode_ui()
-            
-    import datetime
+
     today_dt = datetime.date.today()
     today_str = today_dt.strftime("%Y/%m/%d")
 
-    # カレンダーで日付が選択されたときに呼び出される関数
     def on_date_picked(e):
         if e.control.value:
             top_date_field.value = e.control.value.strftime("%Y/%m/%d")
             top_date_field.update()
-            
-            # ⭐️ 選択完了後、カレンダー画面を確実に閉じます
-            page.close(date_picker) # ⭕ これを追記
+            page.close(date_picker)
 
-    # ⭐️ カレンダー画面本体を定義（デフォルトは今日）
     date_picker = ft.DatePicker(
         first_date=datetime.datetime(2020, 1, 1),
         last_date=datetime.datetime(2030, 12, 31),
-        value=today_dt,         # ⭕ 正しいプロパティ名に修正
+        value=today_dt,
         on_change=on_date_picked
     )
 
-    # 日付フィールドをタップしたときにカレンダーを開く関数
     def open_date_picker(e):
         page.open(date_picker)
 
-    # ⭕ 日付の入力欄（キーボードが出ないように読み取り専用「read_only=True」に設定）
-    top_date_field = ft.TextField(
-        value=today_str,
-        label="日付",
-        width=120,
-        height=40,
-        text_size=14,
-        content_padding=5,
-        read_only=True,          # 👈 文字入力できないように固定
-        on_focus=open_date_picker # 👈 タップされたらカレンダーを開く
-    )
-    top_memo_field = ft.TextField(hint_text="メモ（戦術や対戦相手など）", label="メモ", width=220, height=40, text_size=14, content_padding=5)
+    top_date_field = ft.TextField(value=today_str, label="日付", width=120, height=40, text_size=14, content_padding=5, read_only=True, on_focus=open_date_picker)
+    top_memo_field = ft.TextField(hint_text="メモ", label="メモ", width=220, height=40, text_size=14, content_padding=5)
     top_grand_total_text = ft.Text("総得点: 0 点", size=20, weight="bold")
     
     top_info_container = ft.Container(
-        content=ft.Row([
-            ft.Column([top_date_field, top_memo_field], spacing=5),
-            ft.VerticalDivider(width=10),
-            top_grand_total_text
-        ], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER),
-        padding=10,
-        alignment=ft.alignment.center
+        content=ft.Row([ft.Column([top_date_field, top_memo_field], spacing=5), ft.VerticalDivider(width=10), top_grand_total_text], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+        padding=10, alignment=ft.alignment.center
     )
 
-    # 最下部のパーツ
     bottom_grand_total_text = ft.Text("総得点: 0 点", size=24, weight="bold")
-    bottom_grand_total_container = ft.Container(
-        content=bottom_grand_total_text,
-        padding=15,
-        border_radius=8,
-        alignment=ft.alignment.center,
-        width=350
-    )
+    bottom_grand_total_container = ft.Container(content=bottom_grand_total_text, padding=15, border_radius=8, alignment=ft.alignment.center, width=350)
 
-    
     palette_options = []
     for info in PALETTE_INFO:
         btn = ft.Container(width=40, height=40, bgcolor=info["color"], border_radius=20, data=info["color"], on_click=on_palette_click)
         lbl = ft.Text(info["name"], size=10, weight="bold")
         palette_options.append(ft.Column([btn, lbl], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2))
 
+    # ⭕【バグ修正】リストの一番最初の要素自体（木の家ボタン）に太枠を適用
     palette_options[0].controls[0].border = ft.border.all(3, ft.Colors.BLACK)
     palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER, spacing=10)
 
@@ -775,7 +696,7 @@ def main(page: ft.Page):
     count_table2 = ft.DataTable(
         width=350, column_spacing=18,
         columns=[
-            ft.DataColumn(ft.Text("項目", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("項目", size=16, weight="bold")), 
             ft.DataColumn(ft.Text("個数", size=16, weight="bold")), 
             ft.DataColumn(ft.Text("得点", size=16, weight="bold"))],
         rows=[]
@@ -786,7 +707,7 @@ def main(page: ft.Page):
         width=350, column_spacing=18,
         columns=[
             ft.DataColumn(ft.Text("項目", size=16, weight="bold")), 
-            ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("得点", size=16, weight="bold")), 
             ft.DataColumn(ft.Text("個別入力", size=16, weight="bold"))]
     )
     table_container3 = ft.Container(content=count_table3, alignment=ft.alignment.center, padding=10)
@@ -833,22 +754,15 @@ def main(page: ft.Page):
             stack_layout.controls.append(hit_box)
             vert_line_dict[(c, r)] = vert_line
 
-   # 👇 【変更】既存の page.add 部分を以下のように丸ごと置き換えます
     page.add(
         ft.Column([
-            top_info_container,  # ⭕ 一番上に日付、メモ、総得点を出力
-            ft.Divider(),
-            top_control_row, 
-            ft.Divider(),
-            ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300)), 
-            ft.Divider(),
-            table_container, 
-            ft.Divider(),
-            table_container2, 
-            ft.Divider(),
-            table_container3,
-            ft.Divider(),
-            bottom_grand_total_container # ⭕ 一番下にも大きな総得点パネルを出力
+            top_info_container, ft.Divider(),
+            top_control_row, ft.Divider(),
+            ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300)), ft.Divider(),
+            table_container, ft.Divider(),
+            table_container2, ft.Divider(),
+            table_container3, ft.Divider(),
+            bottom_grand_total_container
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
     )
 
@@ -856,11 +770,8 @@ def main(page: ft.Page):
     update_data_table(ranch_c, unused_c, ranch_stable)
     update_data_table2()
     update_data_table3()
-    
-    # ⭐️ 起動時に総得点を初計算してパーツに反映
     refresh_grand_total_labels()
     page.update()
-
 
 
 if __name__ == "__main__":
