@@ -160,8 +160,9 @@ def main(page: ft.Page):
                 e.control.bgcolor = ft.Colors.GREY_300
             else:
                 e.control.bgcolor = ft.Colors.BLACK
-            e.control.update()
+            # ここでの e.control.update() は削除
             update_mode_ui()
+
 
     palette_options = [
         ft.Container(width=40, height=40, bgcolor=col, border_radius=20, data=col, on_click=on_palette_click) for col in
@@ -205,9 +206,9 @@ def main(page: ft.Page):
 
             horiz_line = ft.Container(
                 width=CELL_W, height=LINE_THICK, bgcolor=ft.Colors.GREY_300,
-                left=left_pos, top=top_pos, on_click=toggle_line,
-                animate=ft.Animation(100, curve="easeOut")
+                left=left_pos, top=top_pos, on_click=toggle_line
             )
+
             stack_layout.controls.append(horiz_line)
             horiz_line_dict[(r, c)] = horiz_line
 
@@ -220,9 +221,9 @@ def main(page: ft.Page):
 
             vert_line = ft.Container(
                 width=LINE_THICK, height=CELL_H, bgcolor=ft.Colors.GREY_300,
-                left=left_pos, top=top_pos, on_click=toggle_line,
-                animate=ft.Animation(100, curve="easeOut")
+                left=left_pos, top=top_pos, on_click=toggle_line
             )
+
             stack_layout.controls.append(vert_line)
             vert_line_dict[(c, r)] = vert_line
 
