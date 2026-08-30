@@ -469,8 +469,8 @@ def main(page: ft.Page):
         width=350,
         column_spacing=18,
         columns=[
-            ft.DataColumn(ft.Text("管理項目", size=16, weight="bold")),
-            ft.DataColumn(ft.Text("現在の数", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("項目", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("個数", size=16, weight="bold")),
             ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
         ],
         rows=[]
@@ -481,8 +481,8 @@ def main(page: ft.Page):
         width=350,
         column_spacing=18,
         columns=[
-            ft.DataColumn(ft.Text("農畜産物", size=16, weight="bold")),
-            ft.DataColumn(ft.Text("個数/頭数", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("項目", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("個数", size=16, weight="bold")),
             ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
         ],
         rows=[]
@@ -493,8 +493,8 @@ def main(page: ft.Page):
         width=350,
         column_spacing=18,
         columns=[
-            ft.DataColumn(ft.Text("追加項目", size=16, weight="bold")), # 項目名は後から自由に変更できます
-            ft.DataColumn(ft.Text("現在の数", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("項目", size=16, weight="bold")), # 項目名は後から自由に変更できます
+            ft.DataColumn(ft.Text("個数", size=16, weight="bold")),
             ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
         ],
         rows=[
