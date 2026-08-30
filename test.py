@@ -273,9 +273,6 @@ def main(page: ft.Page):
             ])
         )
 
-            ])
-        )
-
         # 3. 厩
         limited_ranch_stable_count = min(ranch_stable_count, 4)
         if ranch_stable_count > 0:
