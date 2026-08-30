@@ -271,10 +271,7 @@ def main(page: ft.Page):
                 ])
             )
 
-        # 2つ目の表の点数も加算して「総合計」にする
-        total_score += get_agri_subtotal()
-
-        # 6. 最下部に合計得点行
+        # 6. 最下部にこの表だけの合計得点行を表示
         rows.append(
             ft.DataRow(
                 color=ft.Colors.GREY_100,
@@ -350,11 +347,11 @@ def main(page: ft.Page):
 
         rows.append(
             ft.DataRow(
-                color=ft.Colors.GREY_300,
+                color=ft.Colors.GREY_100,  # 👈 1つ目の表と色を統一（薄いグレー）
                 cells=[
-                    ft.DataCell(ft.Text("農畜小計", size=16, weight="bold", color=ft.Colors.BLACK)),
+                    ft.DataCell(ft.Text("合計点", size=18, weight="bold", color=ft.Colors.BLACK)),  # 👈 「合計点」に変更
                     ft.DataCell(ft.Text("", size=16)),
-                    ft.DataCell(ft.Text(f"{sub_total} 点", size=16, weight="bold", color=ft.Colors.BLACK)),
+                    ft.DataCell(ft.Text(f"{sub_total} 点", size=18, weight="bold", color=ft.Colors.RED_700 if sub_total < 0 else ft.Colors.GREEN_700)), # 👈 サイズを18に拡大し、プラスマイナスで色分け
                 ]
             )
         )
@@ -520,8 +517,12 @@ def main(page: ft.Page):
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
     )
 
-    update_mode_ui()
+    # ⭐️ 起動時に確実に両方の表のデータを組み立てて、ページ全体をリフレッシュします
+    ranch_c, unused_c, ranch_stable = analyze_grid()
+    update_data_table(ranch_c, unused_c, ranch_stable)
     update_data_table2()
+    
+    page.update() 
 
 
 if __name__ == "__main__":
