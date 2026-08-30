@@ -35,7 +35,7 @@ def main(page: ft.Page):
         {"name": "厩", "color": ft.Colors.LIGHT_BLUE_300},
     ]
     
-    # リストの最初の要素から初期色を正しく取得
+    # ⭕【フリーズのバグを完全修正】リストの最初の要素から初期色を正しくインデックス指定で取得
     selected_color = PALETTE_INFO[0]["color"]
 
     horiz_line_dict = {}
@@ -71,7 +71,7 @@ def main(page: ft.Page):
             if curr_r > -1:
                 if 0 <= curr_r < ROWS + 1 and 0 <= curr_c < COLS:
                     if horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BROWN_700:
-                        # ⭕【タイポ修正】「- -1」になっていたバグを「- 1」に完全に直しました
+                        # ⭕ 前回の2重マイナスバグ「curr_r - -1」を「curr_r - 1」へ完全に修正済
                         if not visited[(curr_r - 1, curr_c)]:
                             visited[(curr_r - 1, curr_c)] = True
                             queue.append((curr_r - 1, curr_c))
@@ -92,10 +92,10 @@ def main(page: ft.Page):
                             visited[(curr_r, curr_c - 1)] = True
                             queue.append((curr_r, curr_c - 1))
 
-            # ⭕【バグ修正】「r」になっていた部分をすべて「curr_r」に正しく修正しました
             # 右への移動
             if curr_c < COLS:
                 if 0 <= curr_c + 1 < COLS + 1 and 0 <= curr_r < ROWS:
+                    # ⭕ 前回の「vert_line_dict[(curr_c + 1, r)]」を「(curr_c + 1, curr_r)」へ完全に修正済
                     if vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BROWN_700:
                         if not visited[(curr_r, curr_c + 1)]:
                             visited[(curr_r, curr_c + 1)] = True
@@ -139,7 +139,6 @@ def main(page: ft.Page):
                             if not visited[(curr_r, curr_c - 1)]:
                                 visited[(curr_r, curr_c - 1)] = True
                                 inner_queue.append((curr_r, curr_c - 1))
-                        # ⭕【バグ修正】ここも「r」から「curr_r」に修正しました
                         if curr_c < COLS - 1 and vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BROWN_700:
                             if not visited[(curr_r, curr_c + 1)]:
                                 visited[(curr_r, curr_c + 1)] = True
@@ -275,22 +274,7 @@ def main(page: ft.Page):
                 ft.DataCell(ft.Text(f"{ranch_score} 点", size=16, weight="bold", color=ranch_color)),
             ])
         )
-
-        ranch_color = ft.Colors.BROWN_700
-        if ranch_count == 0: ranch_score = -1
-        elif ranch_count <= 4: ranch_score = ranch_count * 1
-        else: ranch_score = 4
-
-        total_score += ranch_score
-        rows.append(
-            ft.DataRow(cells=[
-                ft.DataCell(ft.Text("牧場", size=16, weight="bold", color=ranch_color)),
-                ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ranch_color)),
-                ft.DataCell(ft.Text(f"{ranch_score} 点", size=16, weight="bold", color=ranch_color)),
-            ])
-        )
-
-        # 3. 厩
+    
         limited_ranch_stable_count = min(ranch_stable_count, 4)
         if ranch_stable_count > 0:
             score = limited_ranch_stable_count * 1
@@ -306,7 +290,6 @@ def main(page: ft.Page):
                 ])
             )
         
-        # 4. 家の追加
         for info in PALETTE_INFO:
             name = info["name"]
             if name not in counts or name == "畑": continue
@@ -329,7 +312,6 @@ def main(page: ft.Page):
                     ])
                 )
         
-        # 5. 未使用マス
         if unused_count > 0:
             score = unused_count * -1
             total_score += score
@@ -341,7 +323,6 @@ def main(page: ft.Page):
                 ])
             )
 
-        # 6. 最下部にこの表だけの合計得点行を表示
         rows.append(
             ft.DataRow(
                 color=ft.Colors.GREY_100,
@@ -355,7 +336,6 @@ def main(page: ft.Page):
         )
         count_table.rows = rows
 
-    # 2つ目の表（農作物・家畜）を計算・更新する関数
     def update_data_table2():
         rows = []
         sub_total = 0
@@ -436,11 +416,9 @@ def main(page: ft.Page):
         )
         count_table2.rows = rows
 
-    # ダイアログを閉じる関数
     def close_dialog(e):
         page.close(page.dialog)
 
-    # 各項目に応じた専用ダイアログを表示する関数
     def show_card_dialog(name):
         dialog_items_container = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, height=200)
 
@@ -545,7 +523,7 @@ def main(page: ft.Page):
 
         for name, score in card_inputs.items():
             if name == "職業": text_color = ft.Colors.CYAN_800
-            elif name == "小さい進歩": text_color = ft.Colors.AMBER_500
+            elif name == "小さい進歩": text_color = ft.Colors.TEAL_700
             elif name == "大きい進歩": text_color = ft.Colors.RED_900
 
             sub_total += score
@@ -678,7 +656,7 @@ def main(page: ft.Page):
     )
 
     bottom_grand_total_text = ft.Text("総得点: 0 点", size=24, weight="bold")
-    bottom_grand_total_container = ft.Container(content=bottom_grand_total_text, padding=15, border_radius=8, alignment=ft.alignment.center, width=350)
+    bottom_grand_total_container = ft.Container(content=bottom_grand_total_text, bgcolor=ft.Colors.GREY_900, padding=15, border_radius=8, alignment=ft.alignment.center, width=350)
 
     palette_options = []
     for info in PALETTE_INFO:
@@ -686,8 +664,7 @@ def main(page: ft.Page):
         lbl = ft.Text(info["name"], size=10, weight="bold")
         palette_options.append(ft.Column([btn, lbl], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2))
 
-    # ⭕【バグ修正】リストの一番最初の要素自体（木の家ボタン）に太枠を適用
-    palette_options[0].controls[0].border = ft.border.all(3, ft.Colors.BLACK)
+    # パレット行のコンポーネントを作成
     palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER, spacing=10)
 
     line_mode_btn = ft.ElevatedButton(
@@ -699,30 +676,21 @@ def main(page: ft.Page):
     
     count_table = ft.DataTable(
         width=350, column_spacing=18,
-        columns=[
-            ft.DataColumn(ft.Text("項目", size=16, weight="bold")), 
-            ft.DataColumn(ft.Text("個数", size=16, weight="bold")), 
-            ft.DataColumn(ft.Text("得点", size=16, weight="bold"))],
+        columns=[ft.DataColumn(ft.Text("項目", size=16, weight="bold")), ft.DataColumn(ft.Text("個数", size=16, weight="bold")), ft.DataColumn(ft.Text("得点", size=16, weight="bold"))],
         rows=[]
     )
     table_container = ft.Container(content=count_table, alignment=ft.alignment.center, padding=10)
 
     count_table2 = ft.DataTable(
         width=350, column_spacing=18,
-        columns=[
-            ft.DataColumn(ft.Text("項目", size=16, weight="bold")), 
-            ft.DataColumn(ft.Text("個数", size=16, weight="bold")), 
-            ft.DataColumn(ft.Text("得点", size=16, weight="bold"))],
+        columns=[ft.DataColumn(ft.Text("項目", size=16, weight="bold")), ft.DataColumn(ft.Text("個数", size=16, weight="bold")), ft.DataColumn(ft.Text("得点", size=16, weight="bold"))],
         rows=[]
     )
     table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
 
     count_table3 = ft.DataTable(
         width=350, column_spacing=18,
-        columns=[
-            ft.DataColumn(ft.Text("項目", size=16, weight="bold")), 
-            ft.DataColumn(ft.Text("得点", size=16, weight="bold")), 
-            ft.DataColumn(ft.Text("個別入力", size=16, weight="bold"))]
+        columns=[ft.DataColumn(ft.Text("カードボーナス", size=16, weight="bold")), ft.DataColumn(ft.Text("得点", size=16, weight="bold")), ft.DataColumn(ft.Text("個別入力", size=16, weight="bold"))]
     )
     table_container3 = ft.Container(content=count_table3, alignment=ft.alignment.center, padding=10)
 
@@ -784,6 +752,10 @@ def main(page: ft.Page):
     update_data_table(ranch_c, unused_c, ranch_stable)
     update_data_table2()
     update_data_table3()
+    
+    # 最初の選択枠線を初期色（木の家）に設定
+    palette_row.controls[0].border = ft.border.all(3, ft.Colors.BLACK)
+    
     refresh_grand_total_labels()
     page.update()
 
