@@ -218,5 +218,7 @@ def main(page: ft.Page):
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
     )
 
-
-ft.app(target=main, view=ft.AppView.WEB_BROWSER)
+if __name__ == "__main__":
+    import os
+    port = int(os.getenv("PORT", 8000))
+    ft.app(target=main, host="0.0.0.0", view=ft.AppView.WEB_BROWSER, port=port)
