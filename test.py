@@ -122,7 +122,7 @@ def main(page: ft.Page):
         selected_color = e.control.data
         for c in palette_row.controls:
             c.border = None
-        e.control.border = ft.border.all(3, ft.Colors.BLACK)
+        e.control.border = ft.Border.all(3, ft.Colors.BLACK)
         update_mode_ui()
 
     def on_line_mode_click(e):
@@ -149,7 +149,7 @@ def main(page: ft.Page):
         PALETTE_COLORS]
 
     # 【インデックスを確実に設定】
-    palette_options[0].border = ft.border.all(3, ft.Colors.BLACK)
+    palette_options[0].border = ft.Border.all(3, ft.Colors.BLACK)
 
     palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER)
 
@@ -212,7 +212,7 @@ def main(page: ft.Page):
             top_control_row,
             mode_text,
             ft.Divider(),
-            ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300)),
+            ft.Container(content=stack_layout, border=ft.Border.all(1, ft.Colors.GREY_300)),
             ft.Divider(),
             space_count_text
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
