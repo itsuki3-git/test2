@@ -135,7 +135,7 @@ def main(page: ft.Page):
 
         return ranch_count, unused_count, ranch_with_stable_count
 
-    # 👇 【修正後】update_data_table関数を丸ごと以下に置き換え
+   　# 集計情報を表形式（DataTable）で更新する関数
     def update_data_table(ranch_count, unused_count, ranch_stable_count):
         counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
         
@@ -146,7 +146,7 @@ def main(page: ft.Page):
                     counts[info["name"]] += 1
 
         rows = []
-        total_score = 0  # 👈 合計得点の初期化
+        total_score = 0  # 合計得点の初期化
         
         # 1. 牧場カウント（1空間あたり 1点）
         if ranch_count > 0:
@@ -162,24 +162,29 @@ def main(page: ft.Page):
                 )
             )
             
-        # 2. 柵に囲まれた厩のカウント（1つの空間あたり 1点）
+        # 2. 厩の得点計算（最大4つまで、1つあたり1点）
+        # 牧場内にある厩の数を、最大4に制限して計算します
+        limited_ranch_stable_count = min(ranch_stable_count, 4)
         if ranch_stable_count > 0:
-            score = ranch_stable_count * 1
+            score = limited_ranch_stable_count * 1
             total_score += score
+            
+            # 表に表示するテキスト（4つを超えている場合は上限であることを明示）
+            display_count = f"{ranch_stable_count} つ"
+            if ranch_stable_count > 4:
+                display_count = f"{ranch_stable_count} つ (上限4)"
+
             rows.append(
                 ft.DataRow(
                     cells=[
                         ft.DataCell(ft.Text("厩", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
-                        ft.DataCell(ft.Text(f"{ranch_stable_count} つ", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
+                        ft.DataCell(ft.Text(display_count, size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
                         ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
                     ]
                 )
             )
         
-        # 3. 各資源マスの追加（0個は除外 / 得点倍率を適用）
-        # 木の家: 0点, レンガの家: 1点, 石の家: 2点, 畑: 0点として扱います
-        score_multipliers = {"木の家": 0, "レンガの家": 1, "石の家": 2, "畑": 0}
-
+        # 3. 各資源マスの追加（0個は除外 / アイテムごとの特殊得点ルール）
         for info in PALETTE_INFO:
             name = info["name"]
             if name not in counts:
@@ -187,10 +192,26 @@ def main(page: ft.Page):
             count = counts[name]
             text_color = info["color"]
             if text_color == ft.Colors.GREEN_400: text_color = ft.Colors.GREEN_700
+            if text_color == ft.Colors.DEEP_ORANGE_700: text_color = ft.Colors.DEEP_ORANGE_700
             if text_color == ft.Colors.AMBER_500: text_color = ft.Colors.AMBER_700
 
             if count > 0:
-                score = count * score_multipliers.get(name, 0)
+                score = 0
+                if name == "木の家":
+                    score = count * 0
+                elif name == "レンガの家":
+                    score = count * 1
+                elif name == "石の家":
+                    score = count * 2
+                elif name == "畑":
+                    # 畑の得点: 1個で-1点、2個で1点、3個で2点、4個以上で3点...
+                    if count == 1:
+                        score = -1
+                    elif count == 2:
+                        score = 1
+                    elif count >= 3:
+                        score = count - 1
+
                 total_score += score
                 rows.append(
                     ft.DataRow(
@@ -216,7 +237,7 @@ def main(page: ft.Page):
                 )
             )
 
-        # 5. 【新設】最下部に合計得点行を追加（常に表示）
+        # 5. 最下部に合計得点行を追加（常に表示）
         rows.append(
             ft.DataRow(
                 color=ft.Colors.GREY_100,  # 合計行を目立たせるために薄いグレーの背景
@@ -229,6 +250,7 @@ def main(page: ft.Page):
         )
 
         count_table.rows = rows
+
 
     def update_mode_ui():
         if current_mode == "COLOR":
