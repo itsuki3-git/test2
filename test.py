@@ -140,20 +140,23 @@ def main(page: ft.Page):
             rows.append(
                 ft.DataRow(
                     cells=[
-                        ft.DataCell(ft.Text("🏡 牧場", size=16, weight="bold", color=ft.Colors.GREEN_700)),
-                        ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ft.Colors.GREEN_700)),
+                        ft.DataCell(ft.Text("牧場", size=16, weight="bold", color=ft.Colors.BROWN_700)), 
+                        ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ft.Colors.BROWN_700)),
                     ]
                 )
             )
         
         # 各資源マスの追加（0個は除外）
+        text_color = info["color"]
+        if text_color == ft.Colors.GREEN_400: text_color = ft.Colors.GREEN_700
+        if text_color == ft.Colors.AMBER_500: text_color = ft.Colors.AMBER_700
         for name, count in counts.items():
             if count > 0:
                 rows.append(
                     ft.DataRow(
                         cells=[
-                            ft.DataCell(ft.Text(f"🔸 {name}", size=16, weight="bold")),
-                            ft.DataCell(ft.Text(f"{count} 個", size=16)),
+                            ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)), 
+                            ft.DataCell(ft.Text(f"{count} 個", size=16, weight="bold", color=text_color)), 
                         ]
                     )
                 )
@@ -163,8 +166,8 @@ def main(page: ft.Page):
             rows.append(
                 ft.DataRow(
                     cells=[
-                        ft.DataCell(ft.Text("🌾 未使用", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
-                        ft.DataCell(ft.Text(f"{unused_count} マス", size=16, color=ft.Colors.BLUE_GREY_600)),
+                        ft.DataCell(ft.Text("未使用", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")), # ⭕ アイコン削除
+                        ft.DataCell(ft.Text(f"{unused_count} マス", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")), # ⭕ 太字に統一
                     ]
                 )
             )
