@@ -35,7 +35,7 @@ def main(page: ft.Page):
         {"name": "厩", "color": ft.Colors.LIGHT_BLUE_300},
     ]
     
-    # ⭕【バグ修正】リストの最初の要素（木の家）から初期色を正しく取得
+    # リストの最初の要素から初期色を正しく取得
     selected_color = PALETTE_INFO[0]["color"]
 
     horiz_line_dict = {}
@@ -71,7 +71,8 @@ def main(page: ft.Page):
             if curr_r > -1:
                 if 0 <= curr_r < ROWS + 1 and 0 <= curr_c < COLS:
                     if horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BROWN_700:
-                        if not visited[(curr_r - -1, curr_c)]:
+                        # ⭕【タイポ修正】「- -1」になっていたバグを「- 1」に完全に直しました
+                        if not visited[(curr_r - 1, curr_c)]:
                             visited[(curr_r - 1, curr_c)] = True
                             queue.append((curr_r - 1, curr_c))
 
