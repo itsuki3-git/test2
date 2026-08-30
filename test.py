@@ -739,7 +739,6 @@ def main(page: ft.Page):
     bottom_grand_total_text = ft.Text("総得点: 0 点", size=24, weight="bold")
     bottom_grand_total_container = ft.Container(
         content=bottom_grand_total_text,
-        bgcolor=ft.Colors.GREY_900,
         padding=15,
         border_radius=8,
         alignment=ft.alignment.center,
@@ -765,21 +764,30 @@ def main(page: ft.Page):
     
     count_table = ft.DataTable(
         width=350, column_spacing=18,
-        columns=[ft.DataColumn(ft.Text("項目", size=16, weight="bold")), ft.DataColumn(ft.Text("個数", size=16, weight="bold")), ft.DataColumn(ft.Text("得点", size=16, weight="bold"))],
+        columns=[
+            ft.DataColumn(ft.Text("項目", size=16, weight="bold")), 
+            ft.DataColumn(ft.Text("個数", size=16, weight="bold")), 
+            ft.DataColumn(ft.Text("得点", size=16, weight="bold"))],
         rows=[]
     )
     table_container = ft.Container(content=count_table, alignment=ft.alignment.center, padding=10)
 
     count_table2 = ft.DataTable(
         width=350, column_spacing=18,
-        columns=[ft.DataColumn(ft.Text("項目", size=16, weight="bold")), ft.DataColumn(ft.Text("個数", size=16, weight="bold")), ft.DataColumn(ft.Text("得点", size=16, weight="bold"))],
+        columns=[
+            ft.DataColumn(ft.Text("項目", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("個数", size=16, weight="bold")), 
+            ft.DataColumn(ft.Text("得点", size=16, weight="bold"))],
         rows=[]
     )
     table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
 
     count_table3 = ft.DataTable(
         width=350, column_spacing=18,
-        columns=[ft.DataColumn(ft.Text("カードボーナス", size=16, weight="bold")), ft.DataColumn(ft.Text("得点", size=16, weight="bold")), ft.DataColumn(ft.Text("個別入力", size=16, weight="bold"))]
+        columns=[
+            ft.DataColumn(ft.Text("項目", size=16, weight="bold")), 
+            ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("個別入力", size=16, weight="bold"))]
     )
     table_container3 = ft.Container(content=count_table3, alignment=ft.alignment.center, padding=10)
 
