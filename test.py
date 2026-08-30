@@ -135,7 +135,7 @@ def main(page: ft.Page):
 
         return ranch_count, unused_count, ranch_with_stable_count
 
-    # 集計情報を表形式（DataTable）で更新する関数
+    # 👇 【修正後】update_data_table関数を丸ごと以下に置き換え
     def update_data_table(ranch_count, unused_count, ranch_stable_count):
         counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
         
@@ -146,30 +146,40 @@ def main(page: ft.Page):
                     counts[info["name"]] += 1
 
         rows = []
+        total_score = 0  # 👈 合計得点の初期化
         
-        # 1. 牧場カウント
+        # 1. 牧場カウント（1空間あたり 1点）
         if ranch_count > 0:
+            score = ranch_count * 1
+            total_score += score
             rows.append(
                 ft.DataRow(
                     cells=[
                         ft.DataCell(ft.Text("牧場", size=16, weight="bold", color=ft.Colors.BROWN_700)),
                         ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ft.Colors.BROWN_700)),
+                        ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=ft.Colors.BROWN_700)),
                     ]
                 )
             )
             
-        # 2. 柵に囲まれた厩のカウント（0個は自動非表示）
+        # 2. 柵に囲まれた厩のカウント（1つの空間あたり 1点）
         if ranch_stable_count > 0:
+            score = ranch_stable_count * 1
+            total_score += score
             rows.append(
                 ft.DataRow(
                     cells=[
                         ft.DataCell(ft.Text("厩", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
                         ft.DataCell(ft.Text(f"{ranch_stable_count} つ", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
+                        ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
                     ]
                 )
             )
         
-        # 3. 各資源マスの追加（0個は除外）
+        # 3. 各資源マスの追加（0個は除外 / 得点倍率を適用）
+        # 木の家: 0点, レンガの家: 1点, 石の家: 2点, 畑: 0点として扱います
+        score_multipliers = {"木の家": 0, "レンガの家": 1, "石の家": 2, "畑": 0}
+
         for info in PALETTE_INFO:
             name = info["name"]
             if name not in counts:
@@ -180,25 +190,43 @@ def main(page: ft.Page):
             if text_color == ft.Colors.AMBER_500: text_color = ft.Colors.AMBER_700
 
             if count > 0:
+                score = count * score_multipliers.get(name, 0)
+                total_score += score
                 rows.append(
                     ft.DataRow(
                         cells=[
                             ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)),
                             ft.DataCell(ft.Text(f"{count} 個", size=16, weight="bold", color=text_color)),
+                            ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=text_color)),
                         ]
                     )
                 )
         
-        # 4. 未使用マスの追加（0個は除外）
+        # 4. 未使用マスの追加（1マスあたり -1点）
         if unused_count > 0:
+            score = unused_count * -1
+            total_score += score
             rows.append(
                 ft.DataRow(
                     cells=[
                         ft.DataCell(ft.Text("未使用", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
                         ft.DataCell(ft.Text(f"{unused_count} マス", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
+                        ft.DataCell(ft.Text(f"{score} 点", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
                     ]
                 )
             )
+
+        # 5. 【新設】最下部に合計得点行を追加（常に表示）
+        rows.append(
+            ft.DataRow(
+                color=ft.Colors.GREY_100,  # 合計行を目立たせるために薄いグレーの背景
+                cells=[
+                    ft.DataCell(ft.Text("合計点", size=18, weight="bold", color=ft.Colors.BLACK)),
+                    ft.DataCell(ft.Text("", size=16)),  # 中央は空欄
+                    ft.DataCell(ft.Text(f"{total_score} 点", size=18, weight="bold", color=ft.Colors.RED_700 if total_score < 0 else ft.Colors.GREEN_700)),
+                ]
+            )
+        )
 
         count_table.rows = rows
 
@@ -277,10 +305,11 @@ def main(page: ft.Page):
                              alignment=ft.MainAxisAlignment.CENTER)
     
     count_table = ft.DataTable(
-        width=280,
+        width=320,  # 👈 列が増えるため横幅を少し拡大
         columns=[
             ft.DataColumn(ft.Text("管理項目", size=16, weight="bold")),
             ft.DataColumn(ft.Text("現在の数", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("得点", size=16, weight="bold")),  # 👈 新設
         ],
         rows=[]
     )
