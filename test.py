@@ -388,7 +388,33 @@ def main(page: ft.Page):
         )
         count_table2.rows = rows
 
-# 👇 【修正後】update_data_table3関数を丸ごと以下に置き換えます
+    # 各項目に応じた専用ダイアログを表示する関数
+    def show_card_dialog(name):
+        if name == "職業":
+            title_text = "💼 職業カードの入力"
+            content_text = "ここには職業カードに関する個別入力の項目や説明が表示されます。"
+        elif name == "小さい進歩":
+            title_text = "🌿 小さい進歩の入力"
+            content_text = "ここには小さい進歩カードに関する個別入力の項目や説明が表示されます。"
+        elif name == "大きい進歩":
+            title_text = "🧱 大きい進歩の入力"
+            content_text = "ここには大きい進歩カードに関する個別入力の項目や説明が表示されます。"
+
+        page.dialog = ft.AlertDialog(
+            title=ft.Text(title_text, weight="bold"),
+            content=ft.Text(content_text, size=14),
+            actions=[
+                ft.TextButton("閉じる", on_click=close_dialog)
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        page.dialog.open = True
+        page.update()
+
+    # ダイアログを閉じる関数
+    def close_dialog(e):
+        page.dialog.open = False
+        page.update()
 
     # 3つ目の表（カードボーナス）を計算・更新する関数
     def update_data_table3():
@@ -405,11 +431,10 @@ def main(page: ft.Page):
 
             sub_total += score
 
-            # 入力値を変更した時の共通処理
+            # 2列目：得点をキーボードで直接変更した時の処理
             def make_on_change(k=name):
                 return lambda e: on_card_input_change(k, e.control.value)
 
-            # 2列目用の入力フィールド
             input_field = ft.TextField(
                 value=str(score),
                 width=60,
@@ -421,53 +446,45 @@ def main(page: ft.Page):
                 on_change=make_on_change()
             )
 
-            # 3列目のプラス・マイナス調整ボタン（タップで1点ずつ増減）
-            def make_adjust_click(k=name, val=1):
-                return lambda e: on_card_adjust_click(k, val)
+            # 3列目：押すと各ボタン個別のダイアログが出るように起動イベントを作成
+            def make_dialog_click(k=name):
+                return lambda e: show_card_dialog(k)
 
-            btn_minus = ft.IconButton(
-                icon=ft.Icons.REMOVE,
-                icon_size=16,
-                width=30,
-                height=30,
-                on_click=make_adjust_click(val=-1)
-            )
-            btn_plus = ft.IconButton(
-                icon=ft.Icons.ADD,
-                icon_size=16,
-                width=30,
-                height=30,
-                on_click=make_adjust_click(val=1)
-            )
-            
-            # プラス・マイナスを横並びにしたボタンセット
-            action_buttons = ft.Row(
-                controls=[btn_minus, btn_plus],
-                spacing=2,
-                alignment=ft.MainAxisAlignment.CENTER
+            # 3列目用の個別入力ボタン
+            detail_btn = ft.ElevatedButton(
+                text="入力",
+                style=ft.ButtonStyle(
+                    bgcolor=ft.Colors.GREY_200,
+                    color=text_color,
+                    shape=ft.RoundedRectangleBorder(radius=6),
+                ),
+                content=ft.Text("入力", size=14, weight="bold"),
+                on_click=make_dialog_click()
             )
 
             rows.append(
                 ft.DataRow(
                     cells=[
-                        ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)),
-                        ft.DataCell(input_field),    # ⭕ 2列目：得点の直接入力
-                        ft.DataCell(action_buttons),  # ⭕ 3列目：個別調整用プラスマイナスボタン
+                        ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)), # ⭕ 1列目：純粋な項目名
+                        ft.DataCell(input_field),                                           # ⭕ 2列目：得点の直接入力欄
+                        ft.DataCell(detail_btn),                                            # ⭕ 3列目：個別入力用のダイアログボタン
                     ]
                 )
             )
 
-        # 3つ目の表の最下部（合計点行。2列目の真下に合計を出力します）
+        # 3つ目の表の最下部（2列目の真下に合計を出力）
         rows.append(
             ft.DataRow(
                 color=ft.Colors.GREY_100,
                 cells=[
                     ft.DataCell(ft.Text("合計点", size=18, weight="bold", color=ft.Colors.BLACK)),
-                    ft.DataCell(ft.Text(f"{sub_total} 点", size=18, weight="bold", color=ft.Colors.RED_700 if sub_total < 0 else ft.Colors.GREEN_700)), # ⭕ 2列目で合計を計算
+                    ft.DataCell(ft.Text(f"{sub_total} 点", size=18, weight="bold", color=ft.Colors.RED_700 if sub_total < 0 else ft.Colors.GREEN_700)), # 2列目の真下
                     ft.DataCell(ft.Text("", size=16)), # 3列目は空欄
                 ]
             )
         )
+        count_table3.rows = rows
+
         count_table3.rows = rows
 
     # ボタンをポチッと押したときの増減ロジック
@@ -581,18 +598,17 @@ def main(page: ft.Page):
     )
     table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
 
-    # 👇 【変更後】count_table3 の列名を新レイアウト用に書き換え
+    # 👇 【変更後】count_table3 の列名を新レイアウト用に修正
     count_table3 = ft.DataTable(
         width=350,
         column_spacing=18,
         columns=[
             ft.DataColumn(ft.Text("カードボーナス", size=16, weight="bold")),
             ft.DataColumn(ft.Text("得点", size=16, weight="bold")),         # ⭕ 2列目
-            ft.DataColumn(ft.Text("個別調整", size=16, weight="bold")),     # ⭕ 3列目
+            ft.DataColumn(ft.Text("個別入力", size=16, weight="bold")),     # ⭕ 3列目
         ]
     )
     table_container3 = ft.Container(content=count_table3, alignment=ft.alignment.center, padding=10)
-
 
     stack_layout = ft.Stack(width=TOTAL_W, height=TOTAL_H)
 
