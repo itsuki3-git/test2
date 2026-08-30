@@ -181,8 +181,10 @@ def main(page: ft.Page):
         
         if ranch_count == 0:
             ranch_score = -1  # 👈 0個のときはペナルティで-1点
-        else:
+        elif ranch_count <=4 :
             ranch_score = ranch_count * 1  # 1空間あたり1点
+        else:
+            ranch_score = 4
 
         total_score += ranch_score
         rows.append(
