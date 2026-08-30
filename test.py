@@ -686,12 +686,40 @@ def main(page: ft.Page):
             else: actual_line.bgcolor = ft.Colors.BROWN_700
             update_mode_ui()
             
-    # 👇 【追加】UIパーツ定義ゾーンの先頭に追記
     import datetime
-    today_str = datetime.date.today().strftime("%Y/%m/%d")
+    today_dt = datetime.date.today()
+    today_str = today_dt.strftime("%Y/%m/%d")
 
-    # 最上部のパーツ
-    top_date_field = ft.TextField(value=today_str, label="日付", width=120, height=40, text_size=14, content_padding=5)
+    # カレンダーで日付が選択されたときに呼び出される関数
+    def on_date_picked(e):
+        if e.control.value:
+            # 選択された日付を「YYYY/MM/DD」の形式にしてTextFieldにセット
+            top_date_field.value = e.control.value.strftime("%Y/%m/%d")
+            top_date_field.update()
+
+    # ⭐️ カレンダー画面本体を定義（デフォルトは今日）
+    date_picker = ft.DatePicker(
+        first_date=datetime.datetime(2020, 1, 1),
+        last_date=datetime.datetime(2030, 12, 31),
+        initial_date=today_dt,
+        on_change=on_date_picked
+    )
+
+    # 日付フィールドをタップしたときにカレンダーを開く関数
+    def open_date_picker(e):
+        page.open(date_picker)
+
+    # ⭕ 日付の入力欄（キーボードが出ないように読み取り専用「read_only=True」に設定）
+    top_date_field = ft.TextField(
+        value=today_str,
+        label="日付",
+        width=120,
+        height=40,
+        text_size=14,
+        content_padding=5,
+        read_only=True,          # 👈 文字入力できないように固定
+        on_focus=open_date_picker # 👈 タップされたらカレンダーを開く
+    )
     top_memo_field = ft.TextField(hint_text="メモ（戦術や対戦相手など）", label="メモ", width=220, height=40, text_size=14, content_padding=5)
     top_grand_total_text = ft.Text("総得点: 0 点", size=20, weight="bold")
     
