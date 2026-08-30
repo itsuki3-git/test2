@@ -34,7 +34,7 @@ def main(page: ft.Page):
         {"name": "厩", "color": ft.Colors.LIGHT_BLUE_300},
     ]
     
-    # リストの最初の要素から初期色を正しく取得
+    # 初期選択色を正しく取得
     selected_color = PALETTE_INFO[0]["color"]
 
     horiz_line_dict = {}
@@ -124,11 +124,11 @@ def main(page: ft.Page):
                             if not visited[(curr_r + 1, curr_c)]:
                                 visited[(curr_r + 1, curr_c)] = True
                                 inner_queue.append((curr_r + 1, curr_c))
-                        if curr_c > 0 and vert_line_dict[(curr_c, r)].bgcolor != ft.Colors.BROWN_700:
+                        if curr_c > 0 and vert_line_dict[(curr_c, curr_r)].bgcolor != ft.Colors.BROWN_700:
                             if not visited[(curr_r, curr_c - 1)]:
                                 visited[(curr_r, curr_c - 1)] = True
                                 inner_queue.append((curr_r, curr_c - 1))
-                        if curr_c < COLS - 1 and vert_line_dict[(curr_c + 1, r)].bgcolor != ft.Colors.BROWN_700:
+                        if curr_c < COLS - 1 and vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BROWN_700:
                             if not visited[(curr_r, curr_c + 1)]:
                                 visited[(curr_r, curr_c + 1)] = True
                                 inner_queue.append((curr_r, curr_c + 1))
@@ -204,11 +204,12 @@ def main(page: ft.Page):
 
         # 2. 牧場
         ranch_color = ft.Colors.BROWN_700
-        if ranch_count == 0: ranch_score = -1
-        elif ranch_count<=4:
+        if ranch_count == 0:
+            ranch_score = -1
+        elif ranch_count <= 4:
             ranch_score = ranch_count * 1
-        else: 
-            ranch_score = 4 
+        else:
+            ranch_score = 4
 
         total_score += ranch_score
         rows.append(
@@ -218,7 +219,6 @@ def main(page: ft.Page):
                 ft.DataCell(ft.Text(f"{ranch_score} 点", size=16, weight="bold", color=ranch_color)),
             ])
         )
-
             
         # 3. 厩
         limited_ranch_stable_count = min(ranch_stable_count, 4)
@@ -302,12 +302,6 @@ def main(page: ft.Page):
                 elif 4 <= count <= 5: score = 2
                 elif 6 <= count <= 7: score = 3
                 elif count >= 8: score = 4
-            elif name == "野菜":
-                text_color = ft.Colors.PURPLE_700
-                if count == 1: score = 1
-                elif count == 2: score = 2
-                elif count == 3: score = 3
-                elif count >= 4: score = 4
 
             elif name == "羊":
                 text_color = ft.Colors.BLUE_GREY_500
@@ -386,7 +380,7 @@ def main(page: ft.Page):
             line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE,
                                                  shape=ft.RoundedRectangleBorder(radius=8))
             for p_col in palette_row.controls:
-                p_col.controls[0].border = None
+                p_col.controls.border = None
 
         ranch_c, unused_c, ranch_stable = analyze_grid()
         update_data_table(ranch_c, unused_c, ranch_stable)
@@ -402,7 +396,7 @@ def main(page: ft.Page):
         current_mode = "COLOR"
         selected_color = e.control.data
         for p_col in palette_row.controls:
-            p_col.controls[0].border = None
+            p_col.controls.border = None
         e.control.border = ft.border.all(3, ft.Colors.BLACK)
         update_mode_ui()
 
@@ -434,7 +428,7 @@ def main(page: ft.Page):
         lbl = ft.Text(info["name"], size=10, weight="bold")
         palette_options.append(ft.Column([btn, lbl], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2))
 
-    palette_options[0].border = ft.border.all(3, ft.Colors.BLACK)
+    palette_options[0].controls[0].border = ft.border.all(3, ft.Colors.BLACK)
     palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER, spacing=10)
 
     line_mode_btn = ft.ElevatedButton(
@@ -464,8 +458,8 @@ def main(page: ft.Page):
             ft.DataColumn(ft.Text("農畜産物", size=16, weight="bold")),
             ft.DataColumn(ft.Text("個数/頭数", size=16, weight="bold")),
             ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
-        ]
-        # ⚠️ rows=[] は関数側で自動生成して代入するため、ここからは削除します
+        ],
+        rows=[]
     )
     table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
 
