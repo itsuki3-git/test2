@@ -423,29 +423,27 @@ def main(page: ft.Page):
                         recalculate_card_score("大きい進歩")
                         refresh_dialog_ui()
 
-                    input_name_widget = ft.Dropdown(
-                        value=item["name"] if item["name"] else None,
-                        hint_text="選択してください",
-                        options=options_list,
+                    # ⭕ Dropdown自体から height を削除し、Containerで囲んで高さを制御します
+                    input_name_widget = ft.Container(
+                        content=ft.Dropdown(
+                            value=item["name"] if item["name"] else None,
+                            hint_text="選択",
+                            options=options_list,
+                            text_size=13,
+                            content_padding=5,
+                            on_change=make_dropdown_change()
+                        ),
                         width=140,
-                        height=35,
-                        text_size=13,
-                        content_padding=5,
-                        on_change=make_dropdown_change()
+                        height=35  # ⭕ コンテナ側で高さを35pxに固定
                     )
                 else:
                     # 職業・小さい進歩は、今まで通りの自由入力
                     def make_name_change(i=idx): 
                         return lambda e: on_detail_name_change(name, i, e.control.value)
                     
-                    input_name_widget = ft.Dropdown(
-                        value=item["name"] if item["name"] else None,
-                        hint_text="選択してください",
-                        options=options_list,
-                        width=140,  # ⭕ 横幅はそのまま維持
-                        text_size=13,
-                        content_padding=5,
-                        on_change=make_dropdown_change() # ⭕ 余計な height を削除してFletに自動計算させます
+                    input_name_widget = ft.TextField(
+                        value=item["name"], hint_text="カード名など", width=140, height=35,
+                        text_size=14, content_padding=5, on_change=make_name_change()
                     )
 
                 # 得点の入力欄（共通）
@@ -471,7 +469,7 @@ def main(page: ft.Page):
             
             dialog_items_container.update()
 
-        # 【追加ボタン】が押された時の処理（確実にrefresh_dialog_uiを呼ぶ）
+        # 【追加ボタン】が押された時の処理
         def add_detail_item(e):
             card_details[name].append({"name": "", "score": 0})
             refresh_dialog_ui()
@@ -522,51 +520,6 @@ def main(page: ft.Page):
         )
         
         page.open(page.dialog)
-        refresh_dialog_ui()
-
-
-        def add_detail_item(e):
-            card_details[name].append({"name": "", "score": 0})
-            refresh_dialog_ui()
-
-        def remove_detail_item(category, index, callback):
-            card_details[category].pop(index)
-            recalculate_card_score(category)
-            callback()
-
-        def on_detail_name_change(category, index, val):
-            card_details[category][index]["name"] = val
-
-        def on_detail_score_change(category, index, val):
-            try: card_details[category][index]["score"] = int(val) if val != "" else 0
-            except ValueError: card_details[category][index]["score"] = 0
-            recalculate_card_score(category)
-
-        def recalculate_card_score(category):
-            total = sum(item["score"] for item in card_details[category])
-            card_inputs[category] = total
-            ranch_c, unused_c, ranch_stable = analyze_grid()
-            update_data_table(ranch_c, unused_c, ranch_stable)
-            update_data_table3()
-            table_container.update()
-            table_container3.update()
-
-        # ⭕【修正】Fletのダイアログ本体の正しい構造
-        page.dialog = ft.AlertDialog(
-            title=ft.Text(f"📋 {name}の内訳入力", weight="bold"),
-            content=ft.Column(
-                controls=[
-                    ft.ElevatedButton(text="項目を追加", icon=ft.Icons.ADD, on_click=add_detail_item, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=6))),
-                    ft.Divider(),
-                    dialog_items_container
-                ], tight=True, width=260
-            ),
-            actions=[ft.TextButton("決定・閉じる", on_click=close_dialog)],
-            actions_alignment=ft.MainAxisAlignment.END,
-        )
-        
-        # ⭕【超重要】画面にダイアログを強制的に出現させる最新の命令を呼び出します
-        page.open(page.dialog)  # 👈 page.dialog.open = True から変更
         refresh_dialog_ui()
 
     # 3つ目の表（カードボーナス）を計算・更新する関数
