@@ -388,14 +388,15 @@ def main(page: ft.Page):
     def show_card_dialog(name):
         dialog_items_container = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, height=200)
 
+        # ダイアログ内の表示を最新のデータに基づいてリフレッシュする内包関数
         def refresh_dialog_ui():
             dialog_items_container.controls.clear()
+            
             # 保存されている個別データをループして入力行を作成
             for idx, item in enumerate(card_details[name]):
                 
                 # --- 項目名（カード名）の入力コントロール定義 ---
                 if name == "大きい進歩":
-                    # 🧱 大きい進歩用のドロップダウン選択肢を定義
                     options_list = [
                         ft.dropdown.Option("かまど"),
                         ft.dropdown.Option("調理場"),
@@ -407,21 +408,18 @@ def main(page: ft.Page):
                         ft.dropdown.Option("カゴ製作所")
                     ]
                     
-                    # デフォルトの得点マッピング
                     default_scores = {
                         "かまど": 1, "調理場": 1, "井戸": 4, "レンガ窯": 2, 
                         "石窯": 3, "家具製作所": 2, "製陶所": 2, "カゴ製作所": 2
                     }
 
-                    # ドロップダウンが変更された時の処理（点数も連動して自動入力）
+                    # ドロップダウン変更時の処理
                     def make_dropdown_change(i=idx):
                         return lambda e: on_big_progress_change(i, e.control.value)
 
                     def on_big_progress_change(index, selected_value):
                         card_details["大きい進歩"][index]["name"] = selected_value
-                        # リストに存在するカードであればデフォルト点数を自動セット
                         card_details["大きい進歩"][index]["score"] = default_scores.get(selected_value, 0)
-                        # メイン画面とダイアログの表示を両方リフレッシュ
                         recalculate_card_score("大きい進歩")
                         refresh_dialog_ui()
 
@@ -436,7 +434,7 @@ def main(page: ft.Page):
                         on_change=make_dropdown_change()
                     )
                 else:
-                    # 💼 職業・🌿 小さい進歩は、今まで通りの自由入力テキストフィールド
+                    # 職業・小さい進歩は、今まで通りの自由入力
                     def make_name_change(i=idx): 
                         return lambda e: on_detail_name_change(name, i, e.control.value)
                     
@@ -463,10 +461,64 @@ def main(page: ft.Page):
                     icon=ft.Icons.DELETE, icon_color=ft.Colors.RED_400, width=30, height=30, on_click=make_delete_click()
                 )
 
-                # ⭕ input_name_widget を使って行を組み立てます
                 item_row = ft.Row(controls=[input_name_widget, txt_score, btn_delete], spacing=5, alignment=ft.MainAxisAlignment.CENTER)
                 dialog_items_container.controls.append(item_row)
+            
             dialog_items_container.update()
+
+        # 【追加ボタン】が押された時の処理（確実にrefresh_dialog_uiを呼ぶ）
+        def add_detail_item(e):
+            card_details[name].append({"name": "", "score": 0})
+            refresh_dialog_ui()
+
+        # アイテム削除時の処理
+        def remove_detail_item(category, index, callback):
+            card_details[category].pop(index)
+            recalculate_card_score(category)
+            callback()
+
+        # 個別項目のテキストが書き換わった時の処理
+        def on_detail_name_change(category, index, val):
+            card_details[category][index]["name"] = val
+
+        # 個別項目の点数が書き換わった時の処理
+        def on_detail_score_change(category, index, val):
+            try: card_details[category][index]["score"] = int(val) if val != "" else 0
+            except ValueError: card_details[category][index]["score"] = 0
+            recalculate_card_score(category)
+
+        # 個別の点数を集計して2列目の得点に上書き反映する処理
+        def recalculate_card_score(category):
+            total = sum(item["score"] for item in card_details[category])
+            card_inputs[category] = total
+            ranch_c, unused_c, ranch_stable = analyze_grid()
+            update_data_table(ranch_c, unused_c, ranch_stable)
+            update_data_table3()
+            table_container.update()
+            table_container3.update()
+
+        # ダイアログの組み立て
+        page.dialog = ft.AlertDialog(
+            title=ft.Text(f"📋 {name}の内訳入力", weight="bold"),
+            content=ft.Column(
+                controls=[
+                    ft.ElevatedButton(
+                        text="項目を追加", 
+                        icon=ft.Icons.ADD, 
+                        on_click=add_detail_item, 
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=6))
+                    ),
+                    ft.Divider(),
+                    dialog_items_container
+                ], tight=True, width=260
+            ),
+            actions=[ft.TextButton("決定・閉じる", on_click=close_dialog)],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        
+        page.open(page.dialog)
+        refresh_dialog_ui()
+
 
         def add_detail_item(e):
             card_details[name].append({"name": "", "score": 0})
