@@ -633,6 +633,7 @@ def main(page: ft.Page):
     ranch_c, unused_c, ranch_stable = analyze_grid()
     update_data_table(ranch_c, unused_c, ranch_stable)
     update_data_table2()
+    update_data_table3()
     
     page.update() 
 
