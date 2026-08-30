@@ -584,8 +584,8 @@ def main(page: ft.Page):
             line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.GREY_300, color=ft.Colors.BLACK, shape=ft.RoundedRectangleBorder(radius=8))
         else:
             line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE, shape=ft.RoundedRectangleBorder(radius=8))
-            for p_col in palette_row.controls:
-                p_col.controls.border = None
+            # ⭕【軽量化修正】無限ループを誘発していた余計なUIリセット処理を綺麗に削除しました
+            pass
 
         ranch_c, unused_c, ranch_stable = analyze_grid()
         update_data_table(ranch_c, unused_c, ranch_stable)
@@ -604,14 +604,21 @@ def main(page: ft.Page):
         nonlocal selected_color, current_mode
         current_mode = "COLOR"
         selected_color = e.control.data
-        for p_col in palette_row.controls:
-            p_col.controls.border = None
+        
+        # ⭕【完全バグ修正】通常のリスト（[]）に対して controls を挟んでいたためクラッシュしていた部分を、1つずつボタン本体（Container）をピンポイントで狙って枠線を消す正しい処理に直しました
+        for p_col in palette_options:
+            p_col.controls[0].border = None
+            
+        # タップされたボタン本体（1番目のContainer）にだけ綺麗な太い黒枠を適用します
         e.control.border = ft.border.all(3, ft.Colors.BLACK)
         update_mode_ui()
 
     def on_line_mode_click(e):
         nonlocal current_mode
         current_mode = "LINE"
+        # 柵モードになったら、すべてのカラーパレットの選択枠線をすっきりクリアします
+        for p_col in palette_options:
+            p_col.controls[0].border = None
         update_mode_ui()
 
     def on_cell_click(e):
@@ -654,6 +661,7 @@ def main(page: ft.Page):
         content=ft.Row([ft.Column([top_date_field, top_memo_field], spacing=5), ft.VerticalDivider(width=10), top_grand_total_text], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER),
         padding=10, alignment=ft.alignment.center
     )
+
 
     bottom_grand_total_text = ft.Text("総得点: 0 点", size=24, weight="bold")
     bottom_grand_total_container = ft.Container(content=bottom_grand_total_text, bgcolor=ft.Colors.GREY_900, padding=15, border_radius=8, alignment=ft.alignment.center, width=350)
