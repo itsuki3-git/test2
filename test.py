@@ -305,7 +305,8 @@ def main(page: ft.Page):
                              alignment=ft.MainAxisAlignment.CENTER)
     
     count_table = ft.DataTable(
-        width=320,  # 👈 列が増えるため横幅を少し拡大
+        width=350,  # 👈 列が増えるため横幅を少し拡大
+        column_spacing=18,
         columns=[
             ft.DataColumn(ft.Text("管理項目", size=16, weight="bold")),
             ft.DataColumn(ft.Text("現在の数", size=16, weight="bold")),
