@@ -380,14 +380,13 @@ def main(page: ft.Page):
         )
         count_table2.rows = rows
 
-    # ダイアログを閉じる関数
+    # ⭕【修正】ダイアログを閉じる正しい現行仕様の関数
     def close_dialog(e):
-        page.dialog.open = False
-        page.update()
+        page.close(page.dialog)  # 👈 page.dialog.open = False から変更
 
     # 各項目に応じた専用ダイアログを表示する関数
     def show_card_dialog(name):
-        dialog_items_container = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, height=200) 
+        dialog_items_container = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, height=200)
 
         def refresh_dialog_ui():
             dialog_items_container.controls.clear()
@@ -440,6 +439,7 @@ def main(page: ft.Page):
             table_container.update()
             table_container3.update()
 
+        # ⭕【修正】Fletのダイアログ本体の正しい構造
         page.dialog = ft.AlertDialog(
             title=ft.Text(f"📋 {name}の内訳入力", weight="bold"),
             content=ft.Column(
@@ -452,8 +452,9 @@ def main(page: ft.Page):
             actions=[ft.TextButton("決定・閉じる", on_click=close_dialog)],
             actions_alignment=ft.MainAxisAlignment.END,
         )
-        page.dialog.open = True
-        page.update()
+        
+        # ⭕【超重要】画面にダイアログを強制的に出現させる最新の命令を呼び出します
+        page.open(page.dialog)  # 👈 page.dialog.open = True から変更
         refresh_dialog_ui()
 
     # 3つ目の表（カードボーナス）を計算・更新する関数
