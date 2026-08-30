@@ -188,6 +188,61 @@ def main(page: ft.Page):
             sub_total += score
         return sub_total
 
+    # 👇 【新設】get_agri_subtotal関数のすぐ下あたりに追記
+    # 1〜3すべての表の点数を合算して「総得点」を計算して返す関数
+    def get_grand_total():
+        # 1つ目の表（盤面）の得点計算を再現
+        counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
+        for cell in cell_dict.values():
+            for info in PALETTE_INFO:
+                if info["name"] in counts and cell.bgcolor == info["color"]:
+                    counts[info["name"]] += 1
+        
+        ranch_c, unused_c, ranch_stable = analyze_grid()
+        
+        # 畑点数
+        field_count = counts["畑"]
+        if field_count == 0 or field_count == 1: field_score = -1
+        elif field_count == 2: field_score = 1
+        elif field_count == 3: field_score = 2
+        elif field_count == 4: field_score = 3
+        elif field_count >= 5: field_score = 4
+        
+        # 牧場点数
+        if ranch_count == 0: ranch_score = -1
+        elif ranch_count <= 4: ranch_score = ranch_count * 1
+        else: ranch_score = 4
+        
+        # 厩点数
+        stable_score = min(ranch_stable, 4) * 1 if ranch_stable > 0 else 0
+        
+        # 家点数
+        house_score = 0
+        if counts["レンガの家"] > 0: house_score += counts["レンガの家"] * 1
+        if counts["石の家"] > 0: house_score += counts["石の家"] * 2
+        
+        # 未使用マス
+        unused_score = unused_c * -1 if unused_c > 0 else 0
+        
+        table1_total = field_score + ranch_score + stable_score + house_score + unused_score
+        
+        # 2つ目の表の小計 ＋ 3つ目の表の小計
+        table2_total = get_agri_subtotal()
+        table3_total = sum(card_inputs.values())
+        
+        return table1_total + table2_total + table3_total
+
+    # 総得点表示パーツの文字を更新する関数
+    def refresh_grand_total_labels():
+        gt = get_grand_total()
+        color = ft.Colors.RED_700 if gt < 0 else ft.Colors.GREEN_700
+        
+        top_grand_total_text.value = f"総得点: {gt} 点"
+        top_grand_total_text.color = color
+        bottom_grand_total_text.value = f"総得点: {gt} 点"
+        bottom_grand_total_text.color = color
+
+
     # 集計情報を表形式（DataTable）で更新する関数
     def update_data_table(ranch_count, unused_count, ranch_stable_count):
         counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
@@ -499,6 +554,10 @@ def main(page: ft.Page):
             update_data_table3()
             table_container.update()
             table_container3.update()
+            refresh_grand_total_labels()
+            top_info_container.update()
+            bottom_grand_total_container.update()
+
 
         # ダイアログの組み立て
         page.dialog = ft.AlertDialog(
@@ -626,7 +685,38 @@ def main(page: ft.Page):
             if actual_line.bgcolor == ft.Colors.BROWN_700: actual_line.bgcolor = ft.Colors.GREY_300
             else: actual_line.bgcolor = ft.Colors.BROWN_700
             update_mode_ui()
+            
+    # 👇 【追加】UIパーツ定義ゾーンの先頭に追記
+    import datetime
+    today_str = datetime.date.today().strftime("%Y/%m/%d")
 
+    # 最上部のパーツ
+    top_date_field = ft.TextField(value=today_str, label="日付", width=120, height=40, text_size=14, content_padding=5)
+    top_memo_field = ft.TextField(hint_text="メモ（戦術や対戦相手など）", label="メモ", width=220, height=40, text_size=14, content_padding=5)
+    top_grand_total_text = ft.Text("総得点: 0 点", size=20, weight="bold")
+    
+    top_info_container = ft.Container(
+        content=ft.Row([
+            ft.Column([top_date_field, top_memo_field], spacing=5),
+            ft.VerticalDivider(width=10),
+            top_grand_total_text
+        ], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+        padding=10,
+        alignment=ft.alignment.center
+    )
+
+    # 最下部のパーツ
+    bottom_grand_total_text = ft.Text("総得点: 0 点", size=24, weight="bold")
+    bottom_grand_total_container = ft.Container(
+        content=bottom_grand_total_text,
+        bgcolor=ft.Colors.GREY_900,
+        padding=15,
+        border_radius=8,
+        alignment=ft.alignment.center,
+        width=350
+    )
+
+    
     palette_options = []
     for info in PALETTE_INFO:
         btn = ft.Container(width=40, height=40, bgcolor=info["color"], border_radius=20, data=info["color"], on_click=on_palette_click)
@@ -705,13 +795,22 @@ def main(page: ft.Page):
             stack_layout.controls.append(hit_box)
             vert_line_dict[(c, r)] = vert_line
 
+   # 👇 【変更】既存の page.add 部分を以下のように丸ごと置き換えます
     page.add(
         ft.Column([
-            top_control_row, ft.Divider(),
-            ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300)), ft.Divider(),
-            table_container, ft.Divider(),
-            table_container2, ft.Divider(),
-            table_container3
+            top_info_container,  # ⭕ 一番上に日付、メモ、総得点を出力
+            ft.Divider(),
+            top_control_row, 
+            ft.Divider(),
+            ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300)), 
+            ft.Divider(),
+            table_container, 
+            ft.Divider(),
+            table_container2, 
+            ft.Divider(),
+            table_container3,
+            ft.Divider(),
+            bottom_grand_total_container # ⭕ 一番下にも大きな総得点パネルを出力
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
     )
 
@@ -719,7 +818,11 @@ def main(page: ft.Page):
     update_data_table(ranch_c, unused_c, ranch_stable)
     update_data_table2()
     update_data_table3()
+    
+    # ⭐️ 起動時に総得点を初計算してパーツに反映
+    refresh_grand_total_labels()
     page.update()
+
 
 
 if __name__ == "__main__":
