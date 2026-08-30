@@ -47,6 +47,13 @@ def main(page: ft.Page):
     # 3つ目の表（カードボーナス）の入力数値を管理する辞書（初期値はすべて0）
     card_inputs = {"職業": 0, "小さい進歩": 0, "大きい進歩": 0}
 
+    # 3つ目の表の個別入力データを保持する構造（項目名、点数）
+    card_details = {
+        "職業": [],
+        "小さい進歩": [],
+        "大きい進歩": []
+    }
+
     # --- 牧場（閉空間）と未使用パネル、および柵に囲まれた厩を数えるアルゴリズム ---
     def analyze_grid():
         visited = { (r, c): False for r in range(-1, ROWS + 1) for c in range(-1, COLS + 1) }
@@ -388,34 +395,136 @@ def main(page: ft.Page):
         )
         count_table2.rows = rows
 
-    # 各項目に応じた専用ダイアログを表示する関数
-    def show_card_dialog(name):
-        if name == "職業":
-            title_text = "💼 職業カードの入力"
-            content_text = "ここには職業カードに関する個別入力の項目や説明が表示されます。"
-        elif name == "小さい進歩":
-            title_text = "🌿 小さい進歩の入力"
-            content_text = "ここには小さい進歩カードに関する個別入力の項目や説明が表示されます。"
-        elif name == "大きい進歩":
-            title_text = "🧱 大きい進歩の入力"
-            content_text = "ここには大きい進歩カードに関する個別入力の項目や説明が表示されます。"
-
-        page.dialog = ft.AlertDialog(
-            title=ft.Text(title_text, weight="bold"),
-            content=ft.Text(content_text, size=14),
-            actions=[
-                ft.TextButton("閉じる", on_click=close_dialog)
-            ],
-            actions_alignment=ft.MainAxisAlignment.END,
-        )
-        page.dialog.open = True
-        page.update()
+# 👇 ⭕【新設・差し替え】show_card_dialog とその関連処理を以下に置き換え
 
     # ダイアログを閉じる関数
     def close_dialog(e):
         page.dialog.open = False
         page.update()
 
+    # 各項目に応じた専用ダイアログを表示する関数
+    def show_card_dialog(name):
+        dialog_items_container = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, max_height=300)
+
+        # ダイアログ内の表示を最新のデータに基づいてリフレッシュする内包関数
+        def refresh_dialog_ui():
+            dialog_items_container.controls.clear()
+            
+            # 保存されている個別データをループして入力行を作成
+            for idx, item in enumerate(card_details[name]):
+                
+                # 項目名の入力欄
+                def make_name_change(i=idx):
+                    return lambda e: on_detail_name_change(name, i, e.control.value)
+                    
+                txt_name = ft.TextField(
+                    value=item["name"],
+                    hint_text="カード名など",
+                    width=140,
+                    height=35,
+                    text_size=14,
+                    content_padding=5,
+                    on_change=make_name_change()
+                )
+
+                # 得点の入力欄
+                def make_score_change(i=idx):
+                    return lambda e: on_detail_score_change(name, i, e.control.value)
+
+                txt_score = ft.TextField(
+                    value=str(item["score"]),
+                    hint_text="点数",
+                    width=60,
+                    height=35,
+                    text_size=14,
+                    content_padding=5,
+                    text_align=ft.TextAlign.CENTER,
+                    keyboard_type=ft.KeyboardType.NUMBER,
+                    on_change=make_score_change()
+                )
+
+                # 削除ボタン
+                def make_delete_click(i=idx):
+                    return lambda e: remove_detail_item(name, i, refresh_dialog_ui)
+
+                btn_delete = ft.IconButton(
+                    icon=ft.Icons.DELETE,
+                    icon_color=ft.Colors.RED_400,
+                    width=30,
+                    height=30,
+                    on_click=make_delete_click()
+                )
+
+                # 1つの行としてまとめる
+                item_row = ft.Row(
+                    controls=[txt_name, txt_score, btn_delete],
+                    spacing=5,
+                    alignment=ft.MainAxisAlignment.CENTER
+                )
+                dialog_items_container.controls.append(item_row)
+            
+            dialog_items_container.update()
+
+        # 【追加ボタン】が押された時の処理
+        def add_detail_item(e):
+            card_details[name].append({"name": "", "score": 0})
+            refresh_dialog_ui()
+
+        # アイテム削除時の処理
+        def remove_detail_item(category, index, callback):
+            card_details[category].pop(index)
+            recalculate_card_score(category)
+            callback()
+
+        # 個別項目のテキストが書き換わった時の処理
+        def on_detail_name_change(category, index, val):
+            card_details[category][index]["name"] = val
+
+        # 個別項目の点数が書き換わった時の処理
+        def on_detail_score_change(category, index, val):
+            try:
+                card_details[category][index]["score"] = int(val) if val != "" else 0
+            except ValueError:
+                card_details[category][index]["score"] = 0
+            recalculate_card_score(category)
+
+        # 個別の点数を集計して2列目の得点に上書き反映する処理
+        def recalculate_card_score(category):
+            total = sum(item["score"] for item in card_details[category])
+            card_inputs[category] = total
+            # メイン画面の表を再計算してリフレッシュ
+            ranch_c, unused_c, ranch_stable = analyze_grid()
+            update_data_table(ranch_c, unused_c, ranch_stable)
+            update_data_table3()
+            table_container.update()
+            table_container3.update()
+
+        # ダイアログ自体の組み立て
+        page.dialog = ft.AlertDialog(
+            title=ft.Text(f"📋 {name}の内訳入力", weight="bold"),
+            content=ft.Column(
+                controls=[
+                    ft.ElevatedButton(
+                        text="項目を追加",
+                        icon=ft.Icons.ADD,
+                        on_click=add_detail_item,
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=6))
+                    ),
+                    ft.Divider(),
+                    dialog_items_container
+                ],
+                tight=True,
+                width=260
+            ),
+            actions=[
+                ft.TextButton("決定・閉じる", on_click=close_dialog)
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        page.dialog.open = True
+        page.update()
+        refresh_dialog_ui()
+        
     # 3つ目の表（カードボーナス）を計算・更新する関数
     def update_data_table3():
         rows = []
@@ -436,7 +545,7 @@ def main(page: ft.Page):
                 return lambda e: on_card_input_change(k, e.control.value)
 
             input_field = ft.TextField(
-                value=str(score),
+                value=str(score), # ⭕ 自動集計された値がここにバチッと入ります
                 width=60,
                 height=35,
                 text_size=14,
