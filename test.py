@@ -701,7 +701,7 @@ def main(page: ft.Page):
     date_picker = ft.DatePicker(
         first_date=datetime.datetime(2020, 1, 1),
         last_date=datetime.datetime(2030, 12, 31),
-        initial_date=today_dt,
+        value=today_dt,         # ⭕ 正しいプロパティ名に修正
         on_change=on_date_picked
     )
 
