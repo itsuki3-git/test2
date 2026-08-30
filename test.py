@@ -28,18 +28,21 @@ def main(page: ft.Page):
     # パレット情報を定義
     PALETTE_INFO = [
         {"name": "木の家", "color": ft.Colors.GREEN_400},
-        {"name": "レンガの家", "color": ft.Colors.DEEP_ORANGE_ACCENT},
+        {"name": "レンガの家", "color": ft.Colors.DEEP_ORANGE_700},
         {"name": "石の家", "color": ft.Colors.GREY_900},
         {"name": "畑", "color": ft.Colors.AMBER_500},
         {"name": "厩", "color": ft.Colors.LIGHT_BLUE_300},
     ]
     
-    # 【バグ修正】リストの最初の要素から初期色を正しく取得
+    # リストの最初の要素から初期色を正しく取得
     selected_color = PALETTE_INFO[0]["color"]
 
     horiz_line_dict = {}
     vert_line_dict = {}
     cell_dict = {}
+
+    # 2つ目の表の入力数値を管理する辞書（初期値はすべて0）
+    agri_inputs = {"小麦": 0, "野菜": 0, "羊": 0, "猪": 0, "牛": 0}
 
     # --- 牧場（閉空間）と未使用パネル、および柵に囲まれた厩を数えるアルゴリズム ---
     def analyze_grid():
@@ -121,11 +124,11 @@ def main(page: ft.Page):
                             if not visited[(curr_r + 1, curr_c)]:
                                 visited[(curr_r + 1, curr_c)] = True
                                 inner_queue.append((curr_r + 1, curr_c))
-                        if curr_c > 0 and vert_line_dict[(curr_c, curr_r)].bgcolor != ft.Colors.BROWN_700:
+                        if curr_c > 0 and vert_line_dict[(curr_c, r)].bgcolor != ft.Colors.BROWN_700:
                             if not visited[(curr_r, curr_c - 1)]:
                                 visited[(curr_r, curr_c - 1)] = True
                                 inner_queue.append((curr_r, curr_c - 1))
-                        if curr_c < COLS - 1 and vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BROWN_700:
+                        if curr_c < COLS - 1 and vert_line_dict[(curr_c + 1, r)].bgcolor != ft.Colors.BROWN_700:
                             if not visited[(curr_r, curr_c + 1)]:
                                 visited[(curr_r, curr_c + 1)] = True
                                 inner_queue.append((curr_r, curr_c + 1))
@@ -135,97 +138,111 @@ def main(page: ft.Page):
 
         return ranch_count, unused_count, ranch_with_stable_count
 
+    # 2つ目の表の現在の小計点を計算して返す関数
+    def get_agri_subtotal():
+        sub_total = 0
+        for name, count in agri_inputs.items():
+            score = -1
+            if name == "小麦":
+                if 1 <= count <= 3: score = 1
+                elif 4 <= count <= 5: score = 2
+                elif 6 <= count <= 7: score = 3
+                elif count >= 8: score = 4
+            elif name == "野菜":
+                if count == 1: score = 1
+                elif count == 2: score = 2
+                elif count == 3: score = 3
+                elif count >= 4: score = 4
+            elif name == "羊":
+                if 1 <= count <= 3: score = 1
+                elif 4 <= count <= 5: score = 2
+                elif 6 <= count <= 7: score = 3
+                elif count >= 8: score = 4
+            elif name == "猪":
+                if 1 <= count <= 2: score = 1
+                elif 3 <= count <= 4: score = 2
+                elif 5 <= count <= 6: score = 3
+                elif count >= 7: score = 4
+            elif name == "牛":
+                if count == 1: score = 1
+                elif 2 <= count <= 3: score = 2
+                elif 4 <= count <= 5: score = 3
+                elif count >= 6: score = 4
+            sub_total += score
+        return sub_total
+
     # 集計情報を表形式（DataTable）で更新する関数
     def update_data_table(ranch_count, unused_count, ranch_stable_count):
         counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
         
-        # すべてのマスの現在の色を集計（厩は空間として数えるため除外）
         for cell in cell_dict.values():
             for info in PALETTE_INFO:
                 if info["name"] in counts and cell.bgcolor == info["color"]:
                     counts[info["name"]] += 1
 
         rows = []
-        total_score = 0  # 合計得点の初期化
+        total_score = 0  # 総合点の計算
         
-        # ーーー 1. 畑（常に一番上に表示 / 0個のときは-1点） ーーー
+        # 1. 畑
         field_count = counts["畑"]
-        field_color = ft.Colors.AMBER_700  # テーブル用の濃い黄金色
-        
-        if field_count == 0:
-            field_score = -1  # 👈 0個のときはペナルティで-1点
-        elif field_count == 1:
-            field_score = -1
-        elif field_count == 2:
-            field_score = 1
-        elif field_count == 3:
-            field_score = 2
-        elif field_count == 4:
-            field_score = 3
-        elif field_count >= 5:
-            field_score = 4
+        field_color = ft.Colors.AMBER_700
+        if field_count == 0: field_score = -1
+        elif field_count == 1: field_score = -1
+        elif field_count == 2: field_score = 1
+        elif field_count == 3: field_score = 2
+        elif field_count == 4: field_score = 3
+        elif field_count >= 5: field_score = 4
 
         total_score += field_score
         rows.append(
-            ft.DataRow(
-                cells=[
-                    ft.DataCell(ft.Text("畑", size=16, weight="bold", color=field_color)),
-                    ft.DataCell(ft.Text(f"{field_count} 個", size=16, weight="bold", color=field_color)),
-                    ft.DataCell(ft.Text(f"{field_score} 点", size=16, weight="bold", color=field_color)),
-                ]
-            )
+            ft.DataRow(cells=[
+                ft.DataCell(ft.Text("畑", size=16, weight="bold", color=field_color)),
+                ft.DataCell(ft.Text(f"{field_count} 個", size=16, weight="bold", color=field_color)),
+                ft.DataCell(ft.Text(f"{field_score} 点", size=16, weight="bold", color=field_color)),
+            ])
         )
 
-        # ーーー 2. 牧場（常に二番目に表示 / 0個のときは-1点） ーーー
-        ranch_color = ft.Colors.BROWN_700  # 柵と同じ茶色
-        
-        if ranch_count == 0:
-            ranch_score = -1  # 👈 0個のときはペナルティで-1点
-        elif ranch_count <=4 :
-            ranch_score = ranch_count * 1  # 1空間あたり1点
-        else:
-            ranch_score = 4
+        # 2. 牧場
+        ranch_color = ft.Colors.BROWN_700
+        if ranch_count == 0: ranch_score = -1
+        elif ranch_count<=4:
+            ranch_score = ranch_count * 1
+        else: 
+            ranch_score = 4 
 
         total_score += ranch_score
         rows.append(
-            ft.DataRow(
-                cells=[
-                    ft.DataCell(ft.Text("牧場", size=16, weight="bold", color=ranch_color)),
-                    ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ranch_color)),
-                    ft.DataCell(ft.Text(f"{ranch_score} 点", size=16, weight="bold", color=ranch_color)),
-                ]
-            )
+            ft.DataRow(cells=[
+                ft.DataCell(ft.Text("牧場", size=16, weight="bold", color=ranch_color)),
+                ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ranch_color)),
+                ft.DataCell(ft.Text(f"{ranch_score} 点", size=16, weight="bold", color=ranch_color)),
+            ])
         )
+
             
-        # ーーー 3. 厩の得点計算（最大4つまで、1つあたり1点 / 0個は自動非表示） ーーー
+        # 3. 厩
         limited_ranch_stable_count = min(ranch_stable_count, 4)
         if ranch_stable_count > 0:
             score = limited_ranch_stable_count * 1
             total_score += score
-            
             display_count = f"{ranch_stable_count} つ"
-            if ranch_stable_count > 4:
-                display_count = f"{ranch_stable_count} つ (上限4)"
+            if ranch_stable_count > 4: display_count = f"{ranch_stable_count} つ (上限4)"
 
             rows.append(
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text("厩", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
-                        ft.DataCell(ft.Text(display_count, size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
-                        ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
-                    ]
-                )
+                ft.DataRow(cells=[
+                    ft.DataCell(ft.Text("厩", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
+                    ft.DataCell(ft.Text(display_count, size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
+                    ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
+                ])
             )
         
-        # ーーー 4. 他の家（木の家、レンガの家、石の家）の追加（0個は除外） ーーー
+        # 4. 家の追加
         for info in PALETTE_INFO:
             name = info["name"]
-            if name not in counts or name == "畑":  # 畑はすでに最上部に固定配置したのでスキップ
-                continue
+            if name not in counts or name == "畑": continue
             count = counts[name]
             text_color = info["color"]
             if text_color == ft.Colors.GREEN_400: text_color = ft.Colors.GREEN_700
-            if text_color == ft.Colors.DEEP_ORANGE_700: text_color = ft.Colors.DEEP_ORANGE_700
 
             if count > 0:
                 score = 0
@@ -235,30 +252,29 @@ def main(page: ft.Page):
 
                 total_score += score
                 rows.append(
-                    ft.DataRow(
-                        cells=[
-                            ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)),
-                            ft.DataCell(ft.Text(f"{count} 個", size=16, weight="bold", color=text_color)),
-                            ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=text_color)),
-                        ]
-                    )
+                    ft.DataRow(cells=[
+                        ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)),
+                        ft.DataCell(ft.Text(f"{count} 個", size=16, weight="bold", color=text_color)),
+                        ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=text_color)),
+                    ])
                 )
         
-        # ーーー 5. 未使用マスの追加（1マスあたり -1点 / 0個は除外） ーーー
+        # 5. 未使用マス
         if unused_count > 0:
             score = unused_count * -1
             total_score += score
             rows.append(
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text("未使用", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
-                        ft.DataCell(ft.Text(f"{unused_count} マス", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
-                        ft.DataCell(ft.Text(f"{score} 点", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
-                    ]
-                )
+                ft.DataRow(cells=[
+                    ft.DataCell(ft.Text("未使用", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
+                    ft.DataCell(ft.Text(f"{unused_count} マス", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
+                    ft.DataCell(ft.Text(f"{score} 点", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
+                ])
             )
 
-        # ーーー 6. 最下部に合計得点行を追加 ーーー
+        # 2つ目の表の点数も加算して「総合計」にする
+        total_score += get_agri_subtotal()
+
+        # 6. 最下部に合計得点行
         rows.append(
             ft.DataRow(
                 color=ft.Colors.GREY_100,
@@ -269,9 +285,98 @@ def main(page: ft.Page):
                 ]
             )
         )
-
         count_table.rows = rows
 
+    # 2つ目の表（農作物・家畜）を計算・更新する関数
+    def update_data_table2():
+        rows = []
+        sub_total = 0
+
+        for name, count in agri_inputs.items():
+            score = -1
+            text_color = ft.Colors.BLACK
+
+            if name == "小麦":
+                text_color = ft.Colors.ORANGE_800
+                if 1 <= count <= 3: score = 1
+                elif 4 <= count <= 5: score = 2
+                elif 6 <= count <= 7: score = 3
+                elif count >= 8: score = 4
+            elif name == "野菜":
+                text_color = ft.Colors.PURPLE_700
+                if count == 1: score = 1
+                elif count == 2: score = 2
+                elif count == 3: score = 3
+                elif count >= 4: score = 4
+
+            elif name == "羊":
+                text_color = ft.Colors.BLUE_GREY_500
+                if 1 <= count <= 3: score = 1
+                elif 4 <= count <= 5: score = 2
+                elif 6 <= count <= 7: score = 3
+                elif count >= 8: score = 4
+            elif name == "猪":
+                text_color = ft.Colors.PINK_700
+                if 1 <= count <= 2: score = 1
+                elif 3 <= count <= 4: score = 2
+                elif 5 <= count <= 6: score = 3
+                elif count >= 7: score = 4
+            elif name == "牛":
+                text_color = ft.Colors.AMBER_900
+                if count == 1: score = 1
+                elif 2 <= count <= 3: score = 2
+                elif 4 <= count <= 5: score = 3
+                elif count >= 6: score = 4
+
+            sub_total += score
+
+            def make_on_change(k=name):
+                return lambda e: on_input_change(k, e.control.value)
+
+            input_field = ft.TextField(
+                value=str(count),
+                width=60,
+                height=35,
+                text_size=14,
+                content_padding=5,
+                text_align=ft.TextAlign.CENTER,
+                keyboard_type=ft.KeyboardType.NUMBER,
+                on_change=make_on_change()
+            )
+
+            rows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)),
+                        ft.DataCell(input_field),
+                        ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=text_color)),
+                    ]
+                )
+            )
+
+        rows.append(
+            ft.DataRow(
+                color=ft.Colors.GREY_300,
+                cells=[
+                    ft.DataCell(ft.Text("農畜小計", size=16, weight="bold", color=ft.Colors.BLACK)),
+                    ft.DataCell(ft.Text("", size=16)),
+                    ft.DataCell(ft.Text(f"{sub_total} 点", size=16, weight="bold", color=ft.Colors.BLACK)),
+                ]
+            )
+        )
+        count_table2.rows = rows
+
+    def on_input_change(key, val):
+        try:
+            agri_inputs[key] = int(val) if val != "" else 0
+        except ValueError:
+            agri_inputs[key] = 0
+        
+        ranch_c, unused_c, ranch_stable = analyze_grid()
+        update_data_table(ranch_c, unused_c, ranch_stable)
+        update_data_table2()
+        table_container.update()
+        table_container2.update()
 
     def update_mode_ui():
         if current_mode == "COLOR":
@@ -280,9 +385,8 @@ def main(page: ft.Page):
         else:
             line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE,
                                                  shape=ft.RoundedRectangleBorder(radius=8))
-            # 各Columnの中のContainer(ボタン本体)の枠線をクリアする
             for p_col in palette_row.controls:
-                p_col.controls[0].border = None
+                p_col.controls.border = None
 
         ranch_c, unused_c, ranch_stable = analyze_grid()
         update_data_table(ranch_c, unused_c, ranch_stable)
@@ -290,17 +394,15 @@ def main(page: ft.Page):
         line_mode_btn.update()
         palette_row.update()
         table_container.update()
-        table_container2.update() 
+        table_container2.update()
         stack_layout.update()
 
     def on_palette_click(e):
         nonlocal selected_color, current_mode
         current_mode = "COLOR"
         selected_color = e.control.data
-        # すべてのボタンContainerの選択ボーダーを確実にリセット
         for p_col in palette_row.controls:
-            p_col.controls[0].border = None
-        # タップされたボタンContainerに枠線を適用
+            p_col.controls.border = None
         e.control.border = ft.border.all(3, ft.Colors.BLACK)
         update_mode_ui()
 
@@ -326,35 +428,30 @@ def main(page: ft.Page):
                 actual_line.bgcolor = ft.Colors.BROWN_700
             update_mode_ui()
 
-    # パレットレイアウトの構築
     palette_options = []
     for info in PALETTE_INFO:
         btn = ft.Container(width=40, height=40, bgcolor=info["color"], border_radius=20, data=info["color"], on_click=on_palette_click)
         lbl = ft.Text(info["name"], size=10, weight="bold")
         palette_options.append(ft.Column([btn, lbl], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2))
 
-    # 初期選択（木の家）のContainerに枠線を付与
-    palette_options[0].controls[0].border = ft.border.all(3, ft.Colors.BLACK)
-
+    palette_options.controls.border = ft.border.all(3, ft.Colors.BLACK)
     palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER, spacing=10)
 
     line_mode_btn = ft.ElevatedButton(
         text="✏️ 柵の建設",
         on_click=on_line_mode_click,
-        style=ft.ButtonStyle(bgcolor=ft.Colors.GREY_300, color=ft.Colors.BLACK,
-                             shape=ft.RoundedRectangleBorder(radius=8))
+        style=ft.ButtonStyle(bgcolor=ft.Colors.GREY_300, color=ft.Colors.BLACK, shape=ft.RoundedRectangleBorder(radius=8))
     )
 
-    top_control_row = ft.Row(controls=[palette_row, ft.VerticalDivider(width=10), line_mode_btn],
-                             alignment=ft.MainAxisAlignment.CENTER)
+    top_control_row = ft.Row(controls=[palette_row, ft.VerticalDivider(width=10), line_mode_btn], alignment=ft.MainAxisAlignment.CENTER)
     
     count_table = ft.DataTable(
-        width=350,  # 👈 列が増えるため横幅を少し拡大
+        width=350,
         column_spacing=18,
         columns=[
             ft.DataColumn(ft.Text("管理項目", size=16, weight="bold")),
             ft.DataColumn(ft.Text("現在の数", size=16, weight="bold")),
-            ft.DataColumn(ft.Text("得点", size=16, weight="bold")),  # 👈 新設
+            ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
         ],
         rows=[]
     )
@@ -364,20 +461,16 @@ def main(page: ft.Page):
         width=350,
         column_spacing=18,
         columns=[
-            ft.DataColumn(ft.Text("拡張項目", size=16, weight="bold")), # 必要に応じて列名を変えられます
-            ft.DataColumn(ft.Text("現在の数", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("農畜産物", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("個数/頭数", size=16, weight="bold")),
             ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
         ],
-        rows=[
-            # テスト表示用のダミー行（不要なら後でクリアできます）
-            ft.DataRow(cells=[ft.DataCell(ft.Text("サンプル", size=16)), ft.DataCell(ft.Text("0")), ft.DataCell(ft.Text("0点"))])
-        ]
+        rows=[]
     )
     table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
-    
+
     stack_layout = ft.Stack(width=TOTAL_W, height=TOTAL_H)
 
-    # セルの配置
     for r in range(ROWS):
         for c in range(COLS):
             cell = ft.Container(
@@ -389,7 +482,6 @@ def main(page: ft.Page):
             stack_layout.controls.append(cell)
             cell_dict[(r, c)] = cell
 
-    # 水平線（横の柵）の配置
     for r in range(ROWS + 1):
         for c in range(COLS):
             left_pos = c * CELL_W + OFFSET
@@ -398,22 +490,14 @@ def main(page: ft.Page):
             if r == ROWS: top_pos = TOTAL_H - LINE_THICK - OFFSET
 
             horiz_line = ft.Container(width=CELL_W, height=LINE_THICK, bgcolor=ft.Colors.GREY_300)
-            
             hit_box = ft.Container(
-                content=horiz_line,
-                width=CELL_W,
-                height=LINE_THICK + (HIT_BOX_EXT * 2),
-                bgcolor=ft.Colors.TRANSPARENT,
-                alignment=ft.alignment.center,
-                left=left_pos,
-                top=top_pos - HIT_BOX_EXT,
-                on_click=toggle_line
+                content=horiz_line, width=CELL_W, height=LINE_THICK + (HIT_BOX_EXT * 2),
+                bgcolor=ft.Colors.TRANSPARENT, alignment=ft.alignment.center,
+                left=left_pos, top=top_pos - HIT_BOX_EXT, on_click=toggle_line
             )
-            
             stack_layout.controls.append(hit_box)
             horiz_line_dict[(r, c)] = horiz_line
 
-    # 垂直線（縦の柵）の配置
     for c in range(COLS + 1):
         for r in range(ROWS):
             left_pos = c * CELL_W - (LINE_THICK / 2) + OFFSET
@@ -422,18 +506,11 @@ def main(page: ft.Page):
             if c == COLS: left_pos = TOTAL_W - LINE_THICK - OFFSET
 
             vert_line = ft.Container(width=LINE_THICK, height=CELL_H, bgcolor=ft.Colors.GREY_300)
-            
             hit_box = ft.Container(
-                content=vert_line,
-                width=LINE_THICK + (HIT_BOX_EXT * 2),
-                height=CELL_H,
-                bgcolor=ft.Colors.TRANSPARENT,
-                alignment=ft.alignment.center,
-                left=left_pos - HIT_BOX_EXT,
-                top=top_pos,
-                on_click=toggle_line
+                content=vert_line, width=LINE_THICK + (HIT_BOX_EXT * 2), height=CELL_H,
+                bgcolor=ft.Colors.TRANSPARENT, alignment=ft.alignment.center,
+                left=left_pos - HIT_BOX_EXT, top=top_pos, on_click=toggle_line
             )
-            
             stack_layout.controls.append(hit_box)
             vert_line_dict[(c, r)] = vert_line
 
@@ -444,12 +521,13 @@ def main(page: ft.Page):
             ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300)),
             ft.Divider(),
             table_container,
-            ft.Divider(),    # 👈 表と表の間に区切り線を追加
-            table_container2 # 👈 2つ目の表をここに追加
+            ft.Divider(),
+            table_container2
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
     )
 
     update_mode_ui()
+    update_data_table2()
 
 
 if __name__ == "__main__":
