@@ -388,14 +388,14 @@ def main(page: ft.Page):
         )
         count_table2.rows = rows
 
-    # 👇 【新設】update_data_table2関数の下あたり（on_input_changeの上）に丸ごと追記
+# 👇 【修正後】update_data_table3関数を丸ごと以下に置き換えます
+
     # 3つ目の表（カードボーナス）を計算・更新する関数
     def update_data_table3():
         rows = []
         sub_total = 0  # 3つ目の表だけの合計点
 
         for name, score in card_inputs.items():
-            # アグリコラのカード背景や雰囲気に合わせた上品なカラーを設定
             if name == "職業":
                 text_color = ft.Colors.CYAN_800
             elif name == "小さい進歩":
@@ -405,9 +405,11 @@ def main(page: ft.Page):
 
             sub_total += score
 
+            # 入力値を変更した時の共通処理
             def make_on_change(k=name):
                 return lambda e: on_card_input_change(k, e.control.value)
 
+            # 2列目用の入力フィールド
             input_field = ft.TextField(
                 value=str(score),
                 width=60,
@@ -419,37 +421,58 @@ def main(page: ft.Page):
                 on_change=make_on_change()
             )
 
+            # 3列目のプラス・マイナス調整ボタン（タップで1点ずつ増減）
+            def make_adjust_click(k=name, val=1):
+                return lambda e: on_card_adjust_click(k, val)
+
+            btn_minus = ft.IconButton(
+                icon=ft.Icons.REMOVE,
+                icon_size=16,
+                width=30,
+                height=30,
+                on_click=make_adjust_click(val=-1)
+            )
+            btn_plus = ft.IconButton(
+                icon=ft.Icons.ADD,
+                icon_size=16,
+                width=30,
+                height=30,
+                on_click=make_adjust_click(val=1)
+            )
+            
+            # プラス・マイナスを横並びにしたボタンセット
+            action_buttons = ft.Row(
+                controls=[btn_minus, btn_plus],
+                spacing=2,
+                alignment=ft.MainAxisAlignment.CENTER
+            )
+
             rows.append(
                 ft.DataRow(
                     cells=[
                         ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)),
-                        ft.DataCell(input_field),
-                        ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=text_color)),
+                        ft.DataCell(input_field),    # ⭕ 2列目：得点の直接入力
+                        ft.DataCell(action_buttons),  # ⭕ 3列目：個別調整用プラスマイナスボタン
                     ]
                 )
             )
 
-        # 3つ目の表の最下部（合計点行）
+        # 3つ目の表の最下部（合計点行。2列目の真下に合計を出力します）
         rows.append(
             ft.DataRow(
                 color=ft.Colors.GREY_100,
                 cells=[
                     ft.DataCell(ft.Text("合計点", size=18, weight="bold", color=ft.Colors.BLACK)),
-                    ft.DataCell(ft.Text("", size=16)),
-                    ft.DataCell(ft.Text(f"{sub_total} 点", size=18, weight="bold", color=ft.Colors.RED_700 if sub_total < 0 else ft.Colors.GREEN_700)),
+                    ft.DataCell(ft.Text(f"{sub_total} 点", size=18, weight="bold", color=ft.Colors.RED_700 if sub_total < 0 else ft.Colors.GREEN_700)), # ⭕ 2列目で合計を計算
+                    ft.DataCell(ft.Text("", size=16)), # 3列目は空欄
                 ]
             )
         )
         count_table3.rows = rows
 
-    # 3つ目の表のテキストボックスが書き換わったときの処理
-    def on_card_input_change(key, val):
-        try:
-            card_inputs[key] = int(val) if val != "" else 0
-        except ValueError:
-            card_inputs[key] = 0
-        
-        # 数値が変わったら3つ目の表を再計算して画面をリフレッシュ
+    # ボタンをポチッと押したときの増減ロジック
+    def on_card_adjust_click(key, value):
+        card_inputs[key] += value
         update_data_table3()
         table_container3.update()
 
@@ -558,17 +581,18 @@ def main(page: ft.Page):
     )
     table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
 
-# 👇 【変更】仮設置していた count_table3 の定義部分を以下に置き換え
+    # 👇 【変更後】count_table3 の列名を新レイアウト用に書き換え
     count_table3 = ft.DataTable(
         width=350,
         column_spacing=18,
         columns=[
-            ft.DataColumn(ft.Text("ボーナス", size=16, weight="bold")), # ⭕ ヘッダーをカード用に変更
-            ft.DataColumn(ft.Text("獲得得点", size=16, weight="bold")),    # ⭕ 手動入力する得点欄
-            ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("カードボーナス", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("得点", size=16, weight="bold")),         # ⭕ 2列目
+            ft.DataColumn(ft.Text("個別調整", size=16, weight="bold")),     # ⭕ 3列目
         ]
     )
     table_container3 = ft.Container(content=count_table3, alignment=ft.alignment.center, padding=10)
+
 
     stack_layout = ft.Stack(width=TOTAL_W, height=TOTAL_H)
 
