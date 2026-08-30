@@ -359,6 +359,21 @@ def main(page: ft.Page):
     )
     table_container = ft.Container(content=count_table, alignment=ft.alignment.center, padding=10)
 
+    count_table2 = ft.DataTable(
+        width=350,
+        column_spacing=18,
+        columns=[
+            ft.DataColumn(ft.Text("拡張項目", size=16, weight="bold")), # 必要に応じて列名を変えられます
+            ft.DataColumn(ft.Text("現在の数", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
+        ],
+        rows=[
+            # テスト表示用のダミー行（不要なら後でクリアできます）
+            ft.DataRow(cells=[ft.DataCell(ft.Text("サンプル", size=16)), ft.DataCell(ft.Text("0")), ft.DataCell(ft.Text("0点"))])
+        ]
+    )
+    table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
+    
     stack_layout = ft.Stack(width=TOTAL_W, height=TOTAL_H)
 
     # セルの配置
@@ -427,7 +442,9 @@ def main(page: ft.Page):
             ft.Divider(),
             ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300)),
             ft.Divider(),
-            table_container
+            table_container,
+            ft.Divider(),    # 👈 表と表の間に区切り線を追加
+            table_container2 # 👈 2つ目の表をここに追加
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
     )
 
