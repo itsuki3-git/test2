@@ -2,7 +2,7 @@ import flet as ft
 
 
 def main(page: ft.Page):
-    page.title = "牧場・資源管理グリッド"
+    page.title = "牧場·資源管理グリッド"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     
@@ -31,6 +31,7 @@ def main(page: ft.Page):
         {"name": "レンガの家", "color": ft.Colors.BROWN_400},
         {"name": "石の家", "color": ft.Colors.GREY_900},
         {"name": "畑", "color": ft.Colors.AMBER_500},
+        {"name": "厩", "color": ft.Colors.RED_600},
     ]
     
     selected_color = PALETTE_INFO[0]["color"]
@@ -124,7 +125,7 @@ def main(page: ft.Page):
 
     # 集計情報を巨大化した表形式（DataTable）で更新する関数
     def update_data_table(ranch_count, unused_count):
-        counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
+        counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0, "厩": 0}
         
         # すべてのマスの現在の色を集計
         for cell in cell_dict.values():
@@ -181,7 +182,10 @@ def main(page: ft.Page):
             for p_col in palette_row.controls:
                 p_col.controls[0].border = None
 
+        # アルゴリズムからカウントを取得
         ranch_c, unused_c = analyze_grid()
+        
+        # 表形式のデータを更新
         update_data_table(ranch_c, unused_c)
 
         line_mode_btn.update()
@@ -193,8 +197,10 @@ def main(page: ft.Page):
         nonlocal selected_color, current_mode
         current_mode = "COLOR"
         selected_color = e.control.data
+        # 各Columnの1番目の要素（Container）のボーダーを解除
         for p_col in palette_row.controls:
             p_col.controls[0].border = None
+        # クリックされたContainer自身に枠線を付与
         e.control.border = ft.border.all(3, ft.Colors.BLACK)
         update_mode_ui()
 
@@ -220,6 +226,7 @@ def main(page: ft.Page):
                 actual_line.bgcolor = ft.Colors.BROWN_700
             update_mode_ui()
 
+    # パレットレイアウトの構築
     palette_options = []
     for info in PALETTE_INFO:
         btn = ft.Container(width=40, height=40, bgcolor=info["color"], border_radius=20, data=info["color"], on_click=on_palette_click)
@@ -229,7 +236,7 @@ def main(page: ft.Page):
     # 初期選択（木の家）の枠線を付与
     palette_options[0].controls[0].border = ft.border.all(3, ft.Colors.BLACK)
 
-    palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER, spacing=15)
+    palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER, spacing=12)
 
     line_mode_btn = ft.ElevatedButton(
         text="✏️ 柵の建設",
@@ -241,6 +248,7 @@ def main(page: ft.Page):
     top_control_row = ft.Row(controls=[palette_row, ft.VerticalDivider(width=20), line_mode_btn],
                              alignment=ft.MainAxisAlignment.CENTER)
     
+    # 大きく見やすくなった DataTable
     count_table = ft.DataTable(
         width=280,
         columns=[
@@ -253,6 +261,7 @@ def main(page: ft.Page):
 
     stack_layout = ft.Stack(width=TOTAL_W, height=TOTAL_H)
 
+    # セルの配置
     for r in range(ROWS):
         for c in range(COLS):
             cell = ft.Container(
@@ -264,6 +273,7 @@ def main(page: ft.Page):
             stack_layout.controls.append(cell)
             cell_dict[(r, c)] = cell
 
+    # 水平線（横の柵）の配置
     for r in range(ROWS + 1):
         for c in range(COLS):
             left_pos = c * CELL_W + OFFSET
@@ -287,6 +297,7 @@ def main(page: ft.Page):
             stack_layout.controls.append(hit_box)
             horiz_line_dict[(r, c)] = horiz_line
 
+    # 垂直線（縦の柵）の配置
     for c in range(COLS + 1):
         for r in range(ROWS):
             left_pos = c * CELL_W - (LINE_THICK / 2) + OFFSET
