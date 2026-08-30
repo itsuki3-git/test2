@@ -753,8 +753,9 @@ def main(page: ft.Page):
     update_data_table2()
     update_data_table3()
     
-    # 最初の選択枠線を初期色（木の家）に設定
-    palette_row.controls[0].border = ft.border.all(3, ft.Colors.BLACK)
+    # ⭕【フリーズのバグ原因行を削除修正】
+    # palette_optionsの最初の要素であるColumnの中の1番目の要素（木の家ボタン本体Container）に正しく枠線を適用
+    palette_options[0].controls[0].border = ft.border.all(3, ft.Colors.BLACK)
     
     refresh_grand_total_labels()
     page.update()
@@ -764,3 +765,4 @@ if __name__ == "__main__":
     import os
     port = int(os.getenv("PORT", 8000))
     ft.app(target=main, host="0.0.0.0", view=ft.AppView.WEB_BROWSER, port=port)
+
