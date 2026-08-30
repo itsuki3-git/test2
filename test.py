@@ -387,7 +387,7 @@ def main(page: ft.Page):
 
     # 各項目に応じた専用ダイアログを表示する関数
     def show_card_dialog(name):
-        dialog_items_container = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, max_height=300)
+        dialog_items_container = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, height=200) 
 
         def refresh_dialog_ui():
             dialog_items_container.controls.clear()
@@ -477,10 +477,13 @@ def main(page: ft.Page):
             def make_dialog_click(k=name): return lambda e: show_card_dialog(k)
             detail_btn = ft.ElevatedButton(
                 text="入力",
-                style=ft.ButtonStyle(bgcolor=ft.Colors.GREY_200, color=text_color, shape=ft.RoundedRectangleBorder(radius=6)),
-                on_click=make_dialog_click()
+                style=ft.ButtonStyle(
+                    bgcolor=ft.Colors.GREY_200,
+                    color=text_color,
+                    shape=ft.RoundedRectangleBorder(radius=6),
+                ),
+                on_click=make_dialog_click() # ⭕ シンプルにクリックイベントだけを結びつけます
             )
-
             rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)), ft.DataCell(input_field), ft.DataCell(detail_btn)]))
 
         rows.append(
