@@ -345,7 +345,7 @@ def main(page: ft.Page):
                 elif 4 <= count <= 5: score = 3
                 elif count >= 6: score = 4
             elif name == "家族の数":
-               score  count*3
+               score = count*3
 
             sub_total += score
 
