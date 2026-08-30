@@ -31,7 +31,7 @@ def main(page: ft.Page):
         {"name": "レンガの家", "color": ft.Colors.BROWN_400},
         {"name": "石の家", "color": ft.Colors.GREY_900},
         {"name": "畑", "color": ft.Colors.AMBER_500},
-        {"name": "厩", "color": ft.Colors.RED_600},
+        {"name": "厩", "color": ft.Colors.LIGHT_BLUE_300},
     ]
     
     selected_color = PALETTE_INFO[0]["color"]
@@ -150,6 +150,7 @@ def main(page: ft.Page):
         text_color = info["color"]
         if text_color == ft.Colors.GREEN_400: text_color = ft.Colors.GREEN_700
         if text_color == ft.Colors.AMBER_500: text_color = ft.Colors.AMBER_700
+        if text_color == ft.Colors.LIGHT_BLUE_300: text_color = ft.Colors.LIGHT_BLUE_700
         for name, count in counts.items():
             if count > 0:
                 rows.append(
