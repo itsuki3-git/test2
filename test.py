@@ -95,14 +95,24 @@ def main(page: ft.Page):
 
         # 内側に孤立した完全な閉鎖空間（牧場）をカウント
         ranch_count = 0
+        ranch_with_stable_count = 0  # 👈 【新設】厩が含まれる牧場の数
+
         for r in range(ROWS):
             for c in range(COLS):
                 if not visited[(r, c)]:
                     ranch_count += 1
                     inner_queue = [(r, c)]
                     visited[(r, c)] = True
+                    
+                    # 👈 探索する現在の牧場内に厩があるかを判定するフラグ
+                    has_stable = False 
+
                     while inner_queue:
                         curr_r, curr_c = inner_queue.pop(0)
+
+                        # 現在チェックしているマスが水色（厩）であればフラグを立てる
+                        if cell_dict[(curr_r, curr_c)].bgcolor == ft.Colors.LIGHT_BLUE_300:
+                            has_stable = True
 
                         if curr_r > 0 and horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BROWN_700:
                             if not visited[(curr_r - 1, curr_c)]:
@@ -120,58 +130,60 @@ def main(page: ft.Page):
                             if not visited[(curr_r, curr_c + 1)]:
                                 visited[(curr_r, curr_c + 1)] = True
                                 inner_queue.append((curr_r, curr_c + 1))
+                    
+                    # 空間の探索が終わったとき、1つでも厩があればカウント
+                    if has_stable:
+                        ranch_with_stable_count += 1
 
-        return ranch_count, unused_count
+        # ranch_with_stable_countも一緒に返すように拡張
+        return ranch_count, unused_count, ranch_with_stable_count
 
-    # 集計情報を巨大化した表形式（DataTable）で更新する関数
-    def update_data_table(ranch_count, unused_count):
-        counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0, "厩": 0}
+    def update_data_table(ranch_count, unused_count, ranch_stable_count):
+        # ⚠️ 集計対象から「厩」を消去
+        counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0} 
         
-        # すべてのマスの現在の色を集計
         for cell in cell_dict.values():
             for info in PALETTE_INFO:
-                if cell.bgcolor == info["color"]:
+                if info["name"] in counts and cell.bgcolor == info["color"]:
                     counts[info["name"]] += 1
 
         rows = []
         
-        # 牧場カウントを表の一番上に追加（0個は除外）
+        # 牧場行
         if ranch_count > 0:
-            rows.append(
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text("牧場", size=16, weight="bold", color=ft.Colors.BROWN_700)), 
-                        ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ft.Colors.BROWN_700)),
-                    ]
-                )
-            )
+            rows.append(ft.DataRow(cells=[
+                ft.DataCell(ft.Text("牧場", size=16, weight="bold", color=ft.Colors.BROWN_700)),
+                ft.DataCell(ft.Text(f"{ranch_count} つ", size=16, weight="bold", color=ft.Colors.BROWN_700)),
+            ]))
+            
+        # 🏡 【新設】柵に囲まれた厩のカウント行（文字色は水色に同期 / 0個は自動非表示）
+        if ranch_stable_count > 0:
+            rows.append(ft.DataRow(cells=[
+                ft.DataCell(ft.Text("厩", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
+                ft.DataCell(ft.Text(f"{ranch_stable_count} つ", size=16, weight="bold", color=ft.Colors.LIGHT_BLUE_700)),
+            ]))
         
-        # 各資源マスの追加（0個は除外）
-        text_color = info["color"]
-        if text_color == ft.Colors.GREEN_400: text_color = ft.Colors.GREEN_700
-        if text_color == ft.Colors.AMBER_500: text_color = ft.Colors.AMBER_700
-        if text_color == ft.Colors.LIGHT_BLUE_300: text_color = ft.Colors.LIGHT_BLUE_700
-        for name, count in counts.items():
+        # 他の家・畑の行
+        for info in PALETTE_INFO:
+            name = info["name"]
+            if name not in counts: continue
+            count = counts[name]
+            text_color = info["color"]
+            if text_color == ft.Colors.GREEN_400: text_color = ft.Colors.GREEN_700
+            if text_color == ft.Colors.AMBER_500: text_color = ft.Colors.AMBER_700
+
             if count > 0:
-                rows.append(
-                    ft.DataRow(
-                        cells=[
-                            ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)), 
-                            ft.DataCell(ft.Text(f"{count} 個", size=16, weight="bold", color=text_color)), 
-                        ]
-                    )
-                )
+                rows.append(ft.DataRow(cells=[
+                    ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)),
+                    ft.DataCell(ft.Text(f"{count} 個", size=16, weight="bold", color=text_color)),
+                ]))
         
-        # 未使用マスの追加（0個は除外）
+        # 未使用マスの行
         if unused_count > 0:
-            rows.append(
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text("未使用", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")), # ⭕ アイコン削除
-                        ft.DataCell(ft.Text(f"{unused_count} マス", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")), # ⭕ 太字に統一
-                    ]
-                )
-            )
+            rows.append(ft.DataRow(cells=[
+                ft.DataCell(ft.Text("未使用", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
+                ft.DataCell(ft.Text(f"{unused_count} マス", size=16, color=ft.Colors.BLUE_GREY_600, weight="bold")),
+            ]))
 
         count_table.rows = rows
 
@@ -186,16 +198,15 @@ def main(page: ft.Page):
             for p_col in palette_row.controls:
                 p_col.controls[0].border = None
 
-        # アルゴリズムからカウントを取得
-        ranch_c, unused_c = analyze_grid()
+       # アルゴリズムから新カウント「ranch_stable」を受け取る
+        ranch_c, unused_c, ranch_stable = analyze_grid()
         
-        # 表形式のデータを更新
-        update_data_table(ranch_c, unused_c)
+        # テーブル更新関数へ引き渡す
+        update_data_table(ranch_c, unused_c, ranch_stable)
 
         line_mode_btn.update()
         palette_row.update()
         table_container.update()
-        stack_layout.update()
 
     def on_palette_click(e):
         nonlocal selected_color, current_mode
