@@ -135,7 +135,7 @@ def main(page: ft.Page):
 
         return ranch_count, unused_count, ranch_with_stable_count
 
-   　# 集計情報を表形式（DataTable）で更新する関数
+    # 集計情報を表形式（DataTable）で更新する関数
     def update_data_table(ranch_count, unused_count, ranch_stable_count):
         counts = {"木の家": 0, "レンガの家": 0, "石の家": 0, "畑": 0}
         
