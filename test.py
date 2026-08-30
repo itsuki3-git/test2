@@ -423,7 +423,7 @@ def main(page: ft.Page):
 
         for name, score in card_inputs.items():
             if name == "職業":
-                text_color = ft.Colors.AMBER_100
+                text_color = ft.Colors.AMBER_300
             elif name == "小さい進歩":
                 text_color = ft.Colors.AMBER_500
             elif name == "大きい進歩":
