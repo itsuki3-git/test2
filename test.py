@@ -1,16 +1,17 @@
 import flet as ft
 
-
 def main(page: ft.Page):
-    page.title = "空間カウント付き 3×5 グリッド"
+    page.title = "空間カウント付き 5×3 グリッド"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-
-    CELL_W = 100
-    CELL_H = 80
-    ROWS = 3
+    
+    # スマホ画面に収まるようサイズを調整
+    CELL_W = 65
+    CELL_H = 65
+    ROWS = 3   # 5×3（横5マス、縦3マス）
     COLS = 5
     LINE_THICK = 6
+    HIT_BOX_EXT = 14  # タッチ反応範囲を広げるためのマージン
 
     TOTAL_W = CELL_W * COLS
     TOTAL_H = CELL_H * ROWS
@@ -21,15 +22,9 @@ def main(page: ft.Page):
 
     horiz_line_dict = {}
     vert_line_dict = {}
-    
-    # --- 完全に囲まれた空間だけを数えるアルゴリズム ---
-    def count_enclosed_spaces():
-        # 盤面の外側（外部空間）も含めた探索用の visited 配列
-        # ROWS x COLS の外側に1マスずつ広げるため、サイズは (ROWS+2) x (COLS+2)
-        # 仮想的なインデックス: 行は -1 ~ ROWS、列は -1 ~ COLS
-        visited = { (r, c): False for r in range(-1, ROWS + 1) for c in range(-1, COLS + 1) }
 
-        # 1. 盤面の外側（境界線の外）すべてを「外部空間（海）」としてキューの初期値にする
+    def count_enclosed_spaces():
+        visited = { (r, c): False for r in range(-1, ROWS + 1) for c in range(-1, COLS + 1) }
         queue = []
         for r in range(-1, ROWS + 1):
             for c in range(-1, COLS + 1):
@@ -37,80 +32,88 @@ def main(page: ft.Page):
                     visited[(r, c)] = True
                     queue.append((r, c))
 
-        # 2. 外部空間から「黒線（壁）」に阻まれないエリアをすべて探索して visited にする（外から漏れる場所）
         while queue:
             curr_r, curr_c = queue.pop(0)
 
-            # 上への移動 (curr_r-1, curr_c)
-            if curr_r > -1: # 移動先が外周の内側
-                # curr_rマスの上の境界（horiz_line）が黒くなければ移動可能
+            if curr_r > -1:
                 if 0 <= curr_r < ROWS + 1 and 0 <= curr_c < COLS:
-                    if horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BLACK:
+                    if horiz_line_dict[(curr_r, curr_c)].data.bgcolor != ft.Colors.BLACK:
                         if not visited[(curr_r - 1, curr_c)]:
                             visited[(curr_r - 1, curr_c)] = True
                             queue.append((curr_r - 1, curr_c))
 
-            # 下への移動 (curr_r+1, curr_c)
             if curr_r < ROWS:
-                # (curr_r+1)マスの上の境界（horiz_line）が黒くなければ移動可能
                 if 0 <= curr_r + 1 < ROWS + 1 and 0 <= curr_c < COLS:
-                    if horiz_line_dict[(curr_r + 1, curr_c)].bgcolor != ft.Colors.BLACK:
+                    if horiz_line_dict[(curr_r + 1, curr_c)].data.bgcolor != ft.Colors.BLACK:
                         if not visited[(curr_r + 1, curr_c)]:
                             visited[(curr_r + 1, curr_c)] = True
                             queue.append((curr_r + 1, curr_c))
 
-            # 左への移動 (curr_r, curr_c-1)
             if curr_c > -1:
-                # curr_cマスの左の境界（vert_line）が黒くなければ移動可能
                 if 0 <= curr_c < COLS + 1 and 0 <= curr_r < ROWS:
-                    if vert_line_dict[(curr_c, curr_r)].bgcolor != ft.Colors.BLACK:
+                    if vert_line_dict[(curr_c, curr_r)].data.bgcolor != ft.Colors.BLACK:
                         if not visited[(curr_r, curr_c - 1)]:
                             visited[(curr_r, curr_c - 1)] = True
                             queue.append((curr_r, curr_c - 1))
 
-            # 右への移動 (curr_r, curr_c+1)
             if curr_c < COLS:
-                # (curr_c+1)マスの左の境界（vert_line）が黒くなければ移動可能
                 if 0 <= curr_c + 1 < COLS + 1 and 0 <= curr_r < ROWS:
-                    if vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BLACK:
+                    if vert_line_dict[(curr_c + 1, curr_r)].data.bgcolor != ft.Colors.BLACK:
                         if not visited[(curr_r, curr_c + 1)]:
                             visited[(curr_r, curr_c + 1)] = True
                             queue.append((curr_r, curr_c + 1))
 
-        # 3. 外から到達できなかった「完全に閉じ込められた内側の空間（島）」の独立したグループ数をカウントする
         enclosed_count = 0
         for r in range(ROWS):
             for c in range(COLS):
                 if not visited[(r, c)]:
                     enclosed_count += 1
-                    # 新しい閉鎖空間を発見したので、その空間をすべて埋める
                     inner_queue = [(r, c)]
                     visited[(r, c)] = True
                     while inner_queue:
                         curr_r, curr_c = inner_queue.pop(0)
 
-                        # 上
-                        if curr_r > 0 and horiz_line_dict[(curr_r, curr_c)].bgcolor != ft.Colors.BLACK:
+                        if curr_r > 0 and horiz_line_dict[(curr_r, curr_c)].data.bgcolor != ft.Colors.BLACK:
                             if not visited[(curr_r - 1, curr_c)]:
                                 visited[(curr_r - 1, curr_c)] = True
                                 inner_queue.append((curr_r - 1, curr_c))
-                        # 下
-                        if curr_r < ROWS - 1 and horiz_line_dict[(curr_r + 1, curr_c)].bgcolor != ft.Colors.BLACK:
+                        if curr_r < ROWS - 1 and horiz_line_dict[(curr_r + 1, curr_c)].data.bgcolor != ft.Colors.BLACK:
                             if not visited[(curr_r + 1, curr_c)]:
                                 visited[(curr_r + 1, curr_c)] = True
                                 inner_queue.append((curr_r + 1, curr_c))
-                        # 左
-                        if curr_c > 0 and vert_line_dict[(curr_c, curr_r)].bgcolor != ft.Colors.BLACK:
+                        if curr_c > 0 and vert_line_dict[(curr_c, curr_r)].data.bgcolor != ft.Colors.BLACK:
                             if not visited[(curr_r, curr_c - 1)]:
                                 visited[(curr_r, curr_c - 1)] = True
                                 inner_queue.append((curr_r, curr_c - 1))
-                        # 右
-                        if curr_c < COLS - 1 and vert_line_dict[(curr_c + 1, curr_r)].bgcolor != ft.Colors.BLACK:
+                        if curr_c < COLS - 1 and vert_line_dict[(curr_c + 1, curr_r)].data.bgcolor != ft.Colors.BLACK:
                             if not visited[(curr_r, curr_c + 1)]:
                                 visited[(curr_r, curr_c + 1)] = True
                                 inner_queue.append((curr_r, curr_c + 1))
 
         return enclosed_count
+
+    def update_mode_ui():
+        if current_mode == "COLOR":
+            mode_text.value = "現在のモード: 🎨 色塗り中"
+            mode_text.color = ft.Colors.BLUE_700
+            line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.GREY_300, color=ft.Colors.BLACK,
+                                                 shape=ft.RoundedRectangleBorder(radius=8))
+        else:
+            mode_text.value = "現在のモード: ✏️ 線を選択中"
+            mode_text.color = ft.Colors.BLACK
+            line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE,
+                                                 shape=ft.RoundedRectangleBorder(radius=8))
+            for c in palette_row.controls:
+                c.border = None
+
+        spaces = count_enclosed_spaces()
+        space_count_text.value = f"📦 黒線で囲まれた空間の数: {spaces} つ"
+
+        line_mode_btn.update()
+        mode_text.update()
+        palette_row.update()
+        space_count_text.update()
+        stack_layout.update()
 
     def on_palette_click(e):
         nonlocal selected_color, current_mode
@@ -130,49 +133,24 @@ def main(page: ft.Page):
         if current_mode == "COLOR":
             e.control.bgcolor = selected_color
             e.control.update()
-            
-    def update_mode_ui():
-        if current_mode == "COLOR":
-            mode_text.value = "現在のモード: 🎨 色塗り中"
-            mode_text.color = ft.Colors.BLUE_700
-            line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.GREY_300, color=ft.Colors.BLACK,
-                                                 shape=ft.RoundedRectangleBorder(radius=8))
-        else:
-            mode_text.value = "現在のモード: ✏️ 線を選択中"
-            mode_text.color = ft.Colors.BLACK
-            line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE,
-                                                 shape=ft.RoundedRectangleBorder(radius=8))
-            for c in palette_row.controls:
-                c.border = None
-
-        spaces = count_enclosed_spaces()
-        space_count_text.value = f"📦 黒線で囲まれた空間の数: {spaces} つ"
-
-        # --- 【重要】更新処理の最適化と漏れの修正 ---
-        line_mode_btn.update()
-        mode_text.update()
-        palette_row.update()
-        space_count_text.update()
-        stack_layout.update()  # 👈 これを追加！線やマスが配置されている大元を更新します
 
     def toggle_line(e):
         if current_mode == "LINE":
-            if e.control.bgcolor == ft.Colors.BLACK:
-                e.control.bgcolor = ft.Colors.GREY_300
+            # e.control は透明な透明ヒットボックス(Container)
+            # data プロパティに実際の目視できる線コントロールを持たせて連動
+            target_line = e.control.data
+            if target_line.bgcolor == ft.Colors.BLACK:
+                target_line.bgcolor = ft.Colors.GREY_300
             else:
-                e.control.bgcolor = ft.Colors.BLACK
-            
-            # e.control.update() は不要なまま、全体処理へ流します
+                target_line.bgcolor = ft.Colors.BLACK
             update_mode_ui()
-    
+
     palette_options = [
-        ft.Container(width=40, height=40, bgcolor=col, border_radius=20, data=col, on_click=on_palette_click) for col in
+        ft.Container(width=35, height=35, bgcolor=col, border_radius=18, data=col, on_click=on_palette_click) for col in
         PALETTE_COLORS]
 
-    # 【インデックスを確実に設定】
     palette_options[0].border = ft.border.all(3, ft.Colors.BLACK)
-
-    palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER)
+    palette_row = ft.Row(controls=palette_options, alignment=ft.MainAxisAlignment.CENTER, spacing=10)
 
     line_mode_btn = ft.ElevatedButton(
         text="✏️ 黒線を選択する",
@@ -181,23 +159,24 @@ def main(page: ft.Page):
                              shape=ft.RoundedRectangleBorder(radius=8))
     )
 
-    top_control_row = ft.Row(controls=[palette_row, ft.VerticalDivider(width=20), line_mode_btn],
+    top_control_row = ft.Row(controls=[palette_row, ft.VerticalDivider(width=10), line_mode_btn],
                              alignment=ft.MainAxisAlignment.CENTER)
-    mode_text = ft.Text("現在のモード: 🎨 色塗り中", size=16, weight="bold", color=ft.Colors.BLUE_700)
-    space_count_text = ft.Text("📦 黒線で囲まれた空間の数: 0 つ", size=18, weight="bold", color=ft.Colors.GREEN_700)
+    mode_text = ft.Text("現在のモード: 🎨 色塗り中", size=14, weight="bold", color=ft.Colors.BLUE_700)
+    space_count_text = ft.Text("📦 黒線で囲まれた空間の数: 0 つ", size=16, weight="bold", color=ft.Colors.GREEN_700)
 
     stack_layout = ft.Stack(width=TOTAL_W, height=TOTAL_H)
 
     for r in range(ROWS):
         for c in range(COLS):
             cell = ft.Container(
-                content=ft.Text(f"{r * COLS + c + 1}", color=ft.Colors.GREY_400, size=12),
+                content=ft.Text(f"{r * COLS + c + 1}", color=ft.Colors.GREY_400, size=11),
                 alignment=ft.alignment.center, bgcolor=ft.Colors.GREY_100,
                 width=CELL_W, height=CELL_H, left=c * CELL_W, top=r * CELL_H,
                 on_click=on_cell_click
             )
             stack_layout.controls.append(cell)
 
+    # 横線の配置 (見かけの線と、タッチ範囲を広げた透明なコンテナの二層構造)
     for r in range(ROWS + 1):
         for c in range(COLS):
             left_pos = c * CELL_W
@@ -205,14 +184,28 @@ def main(page: ft.Page):
             if r == 0: top_pos = 0
             if r == ROWS: top_pos = TOTAL_H - LINE_THICK
 
+            # 1. 実際に見える細い線
             horiz_line = ft.Container(
                 width=CELL_W, height=LINE_THICK, bgcolor=ft.Colors.GREY_300,
-                left=left_pos, top=top_pos, on_click=toggle_line
+                left=left_pos, top=top_pos
             )
-
+            
+            # 2. タッチの反応範囲を広くした透明なレイヤー (上に被せる)
+            hit_box = ft.Container(
+                width=CELL_W,
+                height=LINE_THICK + (HIT_BOX_EXT * 2),
+                bgcolor=ft.Colors.TRANSPARENT,
+                left=left_pos,
+                top=top_pos - HIT_BOX_EXT,
+                on_click=toggle_line,
+                data=horiz_line  # 見かけの線オブジェクトをデータとして紐付け
+            )
+            
             stack_layout.controls.append(horiz_line)
-            horiz_line_dict[(r, c)] = horiz_line
+            stack_layout.controls.append(hit_box)
+            horiz_line_dict[(r, c)] = hit_box
 
+    # 縦線の配置
     for c in range(COLS + 1):
         for r in range(ROWS):
             left_pos = c * CELL_W - (LINE_THICK / 2)
@@ -220,23 +213,36 @@ def main(page: ft.Page):
             if c == 0: left_pos = 0
             if c == COLS: left_pos = TOTAL_W - LINE_THICK
 
+            # 1. 実際に見える細い線
             vert_line = ft.Container(
                 width=LINE_THICK, height=CELL_H, bgcolor=ft.Colors.GREY_300,
-                left=left_pos, top=top_pos, on_click=toggle_line
+                left=left_pos, top=top_pos
             )
-
+            
+            # 2. タッチの反応範囲を広くした透明なレイヤー (上に被せる)
+            hit_box = ft.Container(
+                width=LINE_THICK + (HIT_BOX_EXT * 2),
+                height=CELL_H,
+                bgcolor=ft.Colors.TRANSPARENT,
+                left=left_pos - HIT_BOX_EXT,
+                top=top_pos,
+                on_click=toggle_line,
+                data=vert_line  # 見かけの線オブジェクトをデータとして紐付け
+            )
+            
             stack_layout.controls.append(vert_line)
-            vert_line_dict[(c, r)] = vert_line
+            stack_layout.controls.append(hit_box)
+            vert_line_dict[(c, r)] = hit_box
 
     page.add(
         ft.Column([
             top_control_row,
             mode_text,
             ft.Divider(),
-            ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300)),
+            ft.Container(content=stack_layout, border=ft.border.all(1, ft.Colors.GREY_300), padding=0),
             ft.Divider(),
             space_count_text
-        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10)
     )
 
 if __name__ == "__main__":
