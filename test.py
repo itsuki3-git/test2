@@ -248,7 +248,6 @@ def main(page: ft.Page):
                 width=CELL_W,
                 height=LINE_THICK + (HIT_BOX_EXT * 2),
                 bgcolor=ft.Colors.TRANSPARENT,
-                alignment=ft.alignment.center,
                 left=left_pos,
                 top=top_pos - HIT_BOX_EXT if (0 < r < ROWS) else (top_pos if r == 0 else top_pos - (HIT_BOX_EXT * 2)),
                 on_click=toggle_line
@@ -275,7 +274,6 @@ def main(page: ft.Page):
                 width=LINE_THICK + (HIT_BOX_EXT * 2),
                 height=CELL_H,
                 bgcolor=ft.Colors.TRANSPARENT,
-                alignment=ft.alignment.center,
                 left=left_pos - HIT_BOX_EXT if (0 < c < COLS) else (left_pos if c == 0 else left_pos - (HIT_BOX_EXT * 2)),
                 top=top_pos,
                 on_click=toggle_line
