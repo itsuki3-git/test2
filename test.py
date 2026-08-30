@@ -44,6 +44,9 @@ def main(page: ft.Page):
     # 2つ目の表の入力数値を管理する辞書（初期値はすべて0）
     agri_inputs = {"小麦": 0, "野菜": 0, "羊": 0, "猪": 0, "牛": 0, "家族の数": 2}
 
+    # 3つ目の表（カードボーナス）の入力数値を管理する辞書（初期値はすべて0）
+    card_inputs = {"職業": 0, "小さい進歩": 0, "大きい進歩": 0}
+
     # --- 牧場（閉空間）と未使用パネル、および柵に囲まれた厩を数えるアルゴリズム ---
     def analyze_grid():
         visited = { (r, c): False for r in range(-1, ROWS + 1) for c in range(-1, COLS + 1) }
@@ -385,6 +388,72 @@ def main(page: ft.Page):
         )
         count_table2.rows = rows
 
+    # 👇 【新設】update_data_table2関数の下あたり（on_input_changeの上）に丸ごと追記
+    # 3つ目の表（カードボーナス）を計算・更新する関数
+    def update_data_table3():
+        rows = []
+        sub_total = 0  # 3つ目の表だけの合計点
+
+        for name, score in card_inputs.items():
+            # アグリコラのカード背景や雰囲気に合わせた上品なカラーを設定
+            if name == "職業":
+                text_color = ft.Colors.CYAN_800
+            elif name == "小さい進歩":
+                text_color = ft.Colors.TEAL_700
+            elif name == "大きい進歩":
+                text_color = ft.Colors.RED_900
+
+            sub_total += score
+
+            def make_on_change(k=name):
+                return lambda e: on_card_input_change(k, e.control.value)
+
+            input_field = ft.TextField(
+                value=str(score),
+                width=60,
+                height=35,
+                text_size=14,
+                content_padding=5,
+                text_align=ft.TextAlign.CENTER,
+                keyboard_type=ft.KeyboardType.NUMBER,
+                on_change=make_on_change()
+            )
+
+            rows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(name, size=16, weight="bold", color=text_color)),
+                        ft.DataCell(input_field),
+                        ft.DataCell(ft.Text(f"{score} 点", size=16, weight="bold", color=text_color)),
+                    ]
+                )
+            )
+
+        # 3つ目の表の最下部（合計点行）
+        rows.append(
+            ft.DataRow(
+                color=ft.Colors.GREY_100,
+                cells=[
+                    ft.DataCell(ft.Text("合計点", size=18, weight="bold", color=ft.Colors.BLACK)),
+                    ft.DataCell(ft.Text("", size=16)),
+                    ft.DataCell(ft.Text(f"{sub_total} 点", size=18, weight="bold", color=ft.Colors.RED_700 if sub_total < 0 else ft.Colors.GREEN_700)),
+                ]
+            )
+        )
+        count_table3.rows = rows
+
+    # 3つ目の表のテキストボックスが書き換わったときの処理
+    def on_card_input_change(key, val):
+        try:
+            card_inputs[key] = int(val) if val != "" else 0
+        except ValueError:
+            card_inputs[key] = 0
+        
+        # 数値が変わったら3つ目の表を再計算して画面をリフレッシュ
+        update_data_table3()
+        table_container3.update()
+
+
     def on_input_change(key, val):
         try:
             agri_inputs[key] = int(val) if val != "" else 0
@@ -489,17 +558,14 @@ def main(page: ft.Page):
     )
     table_container2 = ft.Container(content=count_table2, alignment=ft.alignment.center, padding=10)
 
+# 👇 【変更】仮設置していた count_table3 の定義部分を以下に置き換え
     count_table3 = ft.DataTable(
         width=350,
         column_spacing=18,
         columns=[
-            ft.DataColumn(ft.Text("項目", size=16, weight="bold")), # 項目名は後から自由に変更できます
-            ft.DataColumn(ft.Text("個数", size=16, weight="bold")),
+            ft.DataColumn(ft.Text("ボーナス", size=16, weight="bold")), # ⭕ ヘッダーをカード用に変更
+            ft.DataColumn(ft.Text("獲得得点", size=16, weight="bold")),    # ⭕ 手動入力する得点欄
             ft.DataColumn(ft.Text("得点", size=16, weight="bold")),
-        ],
-        rows=[
-            # 起動確認用のテスト行（後で自動計算に書き換えます）
-            ft.DataRow(cells=[ft.DataCell(ft.Text("サンプル", size=16)), ft.DataCell(ft.Text("0")), ft.DataCell(ft.Text("0点"))])
         ]
     )
     table_container3 = ft.Container(content=count_table3, alignment=ft.alignment.center, padding=10)
