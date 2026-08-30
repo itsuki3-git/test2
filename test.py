@@ -204,13 +204,16 @@ def main(page: ft.Page):
                 elif name == "石の家":
                     score = count * 2
                 elif name == "畑":
-                    # 畑の得点: 1個で-1点、2個で1点、3個で2点、4個以上で3点...
                     if count == 1:
                         score = -1
                     elif count == 2:
                         score = 1
-                    elif count >= 3:
-                        score = count - 1
+                    elif count == 3:
+                        score = 2
+                    elif count == 4:
+                        score = 3
+                    elif count >= 5:
+                        score = 4
 
                 total_score += score
                 rows.append(
