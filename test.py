@@ -584,7 +584,6 @@ def main(page: ft.Page):
             line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.GREY_300, color=ft.Colors.BLACK, shape=ft.RoundedRectangleBorder(radius=8))
         else:
             line_mode_btn.style = ft.ButtonStyle(bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE, shape=ft.RoundedRectangleBorder(radius=8))
-            # ⭕【軽量化修正】無限ループを誘発していた余計なUIリセット処理を綺麗に削除しました
             pass
 
         ranch_c, unused_c, ranch_stable = analyze_grid()
@@ -605,18 +604,15 @@ def main(page: ft.Page):
         current_mode = "COLOR"
         selected_color = e.control.data
         
-        # ⭕【完全バグ修正】通常のリスト（[]）に対して controls を挟んでいたためクラッシュしていた部分を、1つずつボタン本体（Container）をピンポイントで狙って枠線を消す正しい処理に直しました
         for p_col in palette_options:
             p_col.controls[0].border = None
             
-        # タップされたボタン本体（1番目のContainer）にだけ綺麗な太い黒枠を適用します
         e.control.border = ft.border.all(3, ft.Colors.BLACK)
         update_mode_ui()
 
     def on_line_mode_click(e):
         nonlocal current_mode
         current_mode = "LINE"
-        # 柵モードになったら、すべてのカラーパレットの選択枠線をすっきりクリアします
         for p_col in palette_options:
             p_col.controls[0].border = None
         update_mode_ui()
@@ -637,17 +633,23 @@ def main(page: ft.Page):
     today_dt = datetime.date.today()
     today_str = today_dt.strftime("%Y/%m/%d")
 
+    # ⭕【操作性改善】日付をタップした、またはOKを押した瞬間に自動で閉じる関数
     def on_date_picked(e):
         if e.control.value:
+            # 選択された値を確実に取得してテキストに反映
             top_date_field.value = e.control.value.strftime("%Y/%m/%d")
             top_date_field.update()
-            page.close(date_picker)
+        
+        # ⭐️ 日付が選ばれたら、OKボタンを待たずにカレンダーを強制終了します
+        page.close(date_picker)
 
     date_picker = ft.DatePicker(
         first_date=datetime.datetime(2020, 1, 1),
         last_date=datetime.datetime(2030, 12, 31),
         value=today_dt,
-        on_change=on_date_picked
+        on_change=on_date_picked,
+        # ⭐️ キャンセル（外側タップなど）で閉じられた場合も、裏でハングアップしないように制御
+        on_dismiss=lambda e: page.close(date_picker)
     )
 
     def open_date_picker(e):
@@ -661,6 +663,7 @@ def main(page: ft.Page):
         content=ft.Row([ft.Column([top_date_field, top_memo_field], spacing=5), ft.VerticalDivider(width=10), top_grand_total_text], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER),
         padding=10, alignment=ft.alignment.center
     )
+
 
 
     bottom_grand_total_text = ft.Text("総得点: 0 点", size=24, weight="bold")
