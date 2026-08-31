@@ -388,9 +388,15 @@ def main(page: ft.Page):
 
             def make_on_change(k=name): return lambda e: on_input_change(k, e.control.value)
 
+            def clear_card_on_focus(e):
+                e.control.value = ""
+                e.control.update()
+
             input_field = ft.TextField(
-                value=str(count), width=60, height=35, text_size=14, content_padding=5,
-                text_align=ft.TextAlign.CENTER, keyboard_type=ft.KeyboardType.NUMBER, on_change=make_on_change()
+                value=str(score), width=60, height=35, text_size=14, content_padding=5,
+                text_align=ft.TextAlign.CENTER, keyboard_type=ft.KeyboardType.NUMBER, 
+                on_change=make_on_change(),
+                on_focus=clear_card_on_focus  # ⭕ タップした瞬間に元の文字を消す
             )
 
             rows.append(
@@ -529,9 +535,15 @@ def main(page: ft.Page):
             sub_total += score
 
             def make_on_change(k=name): return lambda e: on_card_input_change(k, e.control.value)
+            def clear_card_on_focus(e):
+                e.control.value = ""
+                e.control.update()
+
             input_field = ft.TextField(
                 value=str(score), width=60, height=35, text_size=14, content_padding=5,
-                text_align=ft.TextAlign.CENTER, keyboard_type=ft.KeyboardType.NUMBER, on_change=make_on_change()
+                text_align=ft.TextAlign.CENTER, keyboard_type=ft.KeyboardType.NUMBER, 
+                on_change=make_on_change(),
+                on_focus=clear_card_on_focus  # ⭕ タップした瞬間に元の文字を消す
             )
 
             def make_dialog_click(k=name): return lambda e: show_card_dialog(k)
