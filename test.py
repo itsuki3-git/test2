@@ -667,7 +667,7 @@ def main(page: ft.Page):
 
 
     bottom_grand_total_text = ft.Text("総得点: 0 点", size=24, weight="bold")
-    bottom_grand_total_container = ft.Container(content=bottom_grand_total_text, bgcolor=ft.Colors.GREY_900, padding=15, border_radius=8, alignment=ft.alignment.center, width=350)
+    bottom_grand_total_container = ft.Container(content=bottom_grand_total_text, padding=15, border_radius=8, alignment=ft.alignment.center, width=350)
 
     palette_options = []
     for info in PALETTE_INFO:
